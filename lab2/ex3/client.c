@@ -9,7 +9,7 @@ int main(){
 
 
 	int fd, read_fd;
-	char str[100], read_str[100];
+	char str[100], read_str[100], x_str[10];
 	int n;
 	while((fd = open("/tmp/fifo_teste", O_WRONLY))== -1){
 	  if(mkfifo("/tmp/fifo_teste", 0666)!=0){
@@ -39,7 +39,10 @@ int main(){
 			fd = open("/tmp/fifo_teste", O_WRONLY);
 			printf("write a string:");
 			fgets(str, 100, stdin);
+			printf("write an x:");
+			fgets(x_str, 10, stdin);
 			write(fd, str, 100);
+			write(fd, x_str, 10);
 			close(fd);
 			mode=1;
 		}

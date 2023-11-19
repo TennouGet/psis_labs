@@ -5,3 +5,7 @@ int f1(){
 int f2(){
     return 14;
 }
+
+int f3(int x){
+    return x+1;
+}

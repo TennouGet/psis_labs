@@ -42,13 +42,13 @@ int main(){
 
 	int n;
 	int i;
-	char read_str[100];
+	char read_str[100], read_x[10];
 	int count = 0;
 
     //
 
     void *lib_handle;
-	int (*fn)(int *);
+	int (*fn)(int );
 	int x, res=0;
 
 	lib_handle = dlopen("lib/funcs.so", RTLD_LAZY);
@@ -75,7 +75,9 @@ int main(){
 
 			fn = dlsym(lib_handle, read_str);
 
-			res = (*fn)(&x);
+			read(read_fd, read_x, 10);
+			int x = atoi(read_x);
+			res = (*fn)(x);
 			printf("res from linked function: %d\n", res);
 
 			close(read_fd);
