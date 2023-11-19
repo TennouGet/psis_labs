@@ -9,23 +9,40 @@
 #include <string.h>
 #include <dlfcn.h>
 
+void send_message(int write_fd, char* pt){
+
+	while((write_fd = open("/tmp/fifo_one_server_writa", O_WRONLY))== -1){
+	  if(mkfifo("/tmp/fifo_one_server_writa", 0666)!=0){
+			printf("problem creating the write fifo\n");
+			exit(-1);
+	  }else{
+		  printf("write fifo created\n");
+	  }
+	}
+
+	printf("sending function result");
+	write(write_fd, pt, strlen(pt));
+
+}
+
 int main(){
 
 
-	int fd;
+	int read_fd, write_fd;
 
-	while((fd = open("/tmp/fifo_teste", O_RDONLY))== -1){
+	while((read_fd = open("/tmp/fifo_teste", O_RDONLY))== -1){
 	  if(mkfifo("/tmp/fifo_teste", 0666)!=0){
-			printf("problem creating the fifo\n");
+			printf("problem creating the read fifo\n");
 			exit(-1);
 	  }else{
-		  printf("fifo created\n");
+		  printf("read fifo created\n");
 	  }
 	}
-	printf("fifo just opened\n");
+	printf("read fifo just opened\n");
+
 	int n;
 	int i;
-	char str[100];
+	char read_str[100];
 	int count = 0;
 
     //
@@ -38,24 +55,41 @@ int main(){
 
     //
 
+	int mode = 0;
+
 	while(1){
 
-		n = read(fd, str, 100);
-		if(n<=0){
-			perror("read ");
-			exit(-1);
+		if(mode==0){
+			read_fd = open("/tmp/fifo_teste", O_RDONLY);
+			n = read(read_fd, read_str, 100);
+			if(n<=0){
+				perror("read ");
+				exit(-1);
+			}
+			count ++;
+			printf("Str %d %s (%d bytes)\n", count, read_str, n);
+
+			//
+
+			read_str[strlen(read_str) - 1] = '\0';
+
+			fn = dlsym(lib_handle, read_str);
+
+			res = (*fn)(&x);
+			printf("res from linked function: %d\n", res);
+
+			close(read_fd);
+			mode=1;
 		}
-		count ++;
-		printf("Str %d %s (%d bytes)\n", count, str, n);
 
-        //
-
-        str[strlen(str) - 1] = '\0';
-
-        fn = dlsym(lib_handle, str);
-
-        res = (*fn)(&x);
-        printf("res from linked function: %d\n", res);
+		if(mode==1){
+			char res_s [50];
+			sprintf(res_s, "%d", res);
+			send_message(write_fd, &res_s[0]);
+			close(write_fd);
+			mode=0;
+		}
+		
 
         //dlclose(lib_handle);
 
