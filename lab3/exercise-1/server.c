@@ -77,8 +77,8 @@ int main()
 
     /* information about the character */
     int ch;
-    int pos_x = 3;
-    int pos_y = 4;
+    int pos_x = WINDOW_SIZE/2;
+    int pos_y = WINDOW_SIZE/2;
 
 
 
@@ -96,33 +96,29 @@ int main()
 			perror("read ");
 			exit(-1);
 		}
-        //printf("received: type: %d, char: %c, direction: %d\n", client.msg_type, client.ch, client.direction);
 
         //TODO_8
         // process connection messages
 
         if(client.msg_type == 0){
             ch = client.ch;
-            wmove(my_win, pos_x, pos_y);
-            waddch(my_win, ch);
-            wrefresh(my_win);
         }
         
         // TODO_11
         // process the movement message
         
         if(client.msg_type == 1){
-            waddch(my_win, 0);
+
+            wmove(my_win, pos_y, pos_x);
+            waddch(my_win,' ');
+
             new_position(&pos_x, &pos_y, client.direction);
+
             wmove(my_win, pos_x, pos_y);
             waddch(my_win, ch);
             wrefresh(my_win);
         }
 
-        /* draw mark on new position 
-        wmove(my_win, pos_x, pos_y);
-        waddch(my_win,ch| A_BOLD);
-        wrefresh(my_win); */			
     }
   	endwin();			/* End curses mode		  */
 
