@@ -112,10 +112,11 @@ int main()
             wmove(my_win, pos_y, pos_x);
             waddch(my_win,' ');
 
-            new_position(&pos_x, &pos_y, client.direction);
+            new_position(&pos_y, &pos_x, client.direction);
 
-            wmove(my_win, pos_x, pos_y);
+            wmove(my_win, pos_y, pos_x);
             waddch(my_win, ch);
+
             wrefresh(my_win);
         }
 
