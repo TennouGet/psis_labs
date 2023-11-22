@@ -8,6 +8,16 @@
 #include <stdlib.h>
 #define WINDOW_SIZE 15
 
+typedef struct char_n_pos {
+
+   char ch;
+
+   int x;
+
+   int y;
+
+} char_n_pos;
+
 direction_t random_direction(){
     return  random()%4;
 
@@ -43,7 +53,8 @@ void new_position(int* x, int *y, direction_t direction){
 
 int main()
 {	
-    
+    struct char_n_pos characters[10];
+    int characters_n = 0;
 
 	// TODO_3
     // create and open the FIFO for reading
@@ -101,21 +112,31 @@ int main()
         // process connection messages
 
         if(client.msg_type == 0){
-            ch = client.ch;
+            characters[characters_n].ch = client.ch;
+            characters[characters_n].x = WINDOW_SIZE/2;
+            characters[characters_n].y = WINDOW_SIZE/2;
+            characters_n++;
         }
         
         // TODO_11
         // process the movement message
+
+        int i = 0;
         
         if(client.msg_type == 1){
 
-            wmove(my_win, pos_y, pos_x);
+            for(i=0; i < characters_n; i++){
+                if(characters[i].ch == client.ch)
+                    break;
+            }
+
+            wmove(my_win, characters[i].y, characters[i].x);
             waddch(my_win,' ');
 
-            new_position(&pos_y, &pos_x, client.direction);
+            new_position(&characters[i].y, &characters[i].x, client.direction);
 
-            wmove(my_win, pos_y, pos_x);
-            waddch(my_win, ch);
+            wmove(my_win, characters[i].y, characters[i].x);
+            waddch(my_win, characters[i].ch);
 
             wrefresh(my_win);
         }
