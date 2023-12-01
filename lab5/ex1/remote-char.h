@@ -12,6 +12,16 @@ typedef struct remote_char_t {
    direction_t direction;
 } remote_char_t;
 
+typedef struct remote_screen {
+
+   int msg_type;
+
+   char ch;
+
+   int pos_x, pos_y;
+
+} remote_screen;
+
 // TODO_2
 //declaration of the FIFO location
 

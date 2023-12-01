@@ -58,36 +58,34 @@ void new_position(int* x, int *y, direction_t direction){
 
 int main()
 {	
+    printf("hello from remote\n");
+
     struct char_n_pos characters[10];
     int characters_n = 0;
 
     
     int read_fd = 0;
 
-    // Socket to talk to clients
-    void *context = zmq_ctx_new ();
-    void *responder = zmq_socket (context, ZMQ_REP);
-    int rc = zmq_bind (responder, "tcp://*:5555");
-    assert (rc == 0);
+    char sub_name[20] = "screen";
 
-    void *pub_context = zmq_ctx_new ();
-    void *publisher = zmq_socket (pub_context, ZMQ_PUB);
-    int rc2 = zmq_bind (publisher, "tcp://*:5557");
-    assert(rc2 == 0);
+    // Socket to talk to screns
+    void *context = zmq_ctx_new();
+    void *subscriber = zmq_socket(context, ZMQ_SUB);
+    zmq_connect(subscriber, "tcp://localhost:5556");
+    zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
-    struct remote_char_t client;
+    printf("Connected to server");
+
+    printf("sub_name: %s", sub_name);
+
+    char buffer[20];
+
+    zmq_recv (subscriber, buffer, strlen(buffer), 0);
+    printf("buffer: %s", buffer);
+
     struct remote_screen screen;
 
-    char buffer[20] = "screen";
-
-    screen.ch = 'a';
-    screen.msg_type=0;
-    screen.pos_x=0;
-
-    zmq_send (publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-    zmq_send (publisher, &screen, sizeof(screen), 0);
-
-
+    /*
     // ncurses initialization
 	initscr();		    	
 	cbreak();				
@@ -95,12 +93,12 @@ int main()
 	noecho();	    
 
 
-    /* creates a window and draws a border */
+    // creates a window and draws a border 
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
 
-    /* information about the character */
+    // information about the character 
     int ch;
     int pos_x = WINDOW_SIZE/2;
     int pos_y = WINDOW_SIZE/2;
@@ -114,23 +112,20 @@ int main()
     while (1)
     {
         // TODO_7
-        // receive message from client trough socket
+        // receive message from screen trough socket
 
-        zmq_recv (responder, &client, sizeof(remote_char_t), 0);
-        printf("recieved: %s", &client.ch);
-        zmq_send (responder, "World", 5, 0);
+        zmq_recv (subscriber, &screen, sizeof(remote_screen), 0);
+        printf("recieved: %d", screen.pos_x);
 
 
         //TODO_8
         // process connection messages
 
-        if(client.msg_type == 0){
-            characters[characters_n].ch = client.ch;
+        if(screen.msg_type == 0){
+            characters[characters_n].ch = screen.ch;
             characters[characters_n].x = WINDOW_SIZE/2;
             characters[characters_n].y = WINDOW_SIZE/2;
             characters_n++;
-
-
         }
         
         // TODO_11
@@ -138,33 +133,24 @@ int main()
 
         int i = 0;
         
-        if(client.msg_type == 1){
+        if(screen.msg_type == 1){
 
             for(i=0; i < characters_n; i++){
-                if(characters[i].ch == client.ch)
+                if(characters[i].ch == screen.ch)
                     break;
             }
 
             wmove(my_win, characters[i].y, characters[i].x);
             waddch(my_win,' ');
 
-            new_position(&characters[i].y, &characters[i].x, client.direction);
-
-            wmove(my_win, characters[i].y, characters[i].x);
+            wmove(my_win, screen.pos_y, screen.pos_x);
             waddch(my_win, characters[i].ch);
 
             wrefresh(my_win);
         }
 
-        screen.ch = characters[i].ch;
-        screen.pos_x = characters[i].x;
-        screen.pos_y = characters[i].y;
-        screen.msg_type == 1;
-        zmq_send (publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-        zmq_send (publisher, &screen, sizeof(screen), 0);
-
     }
-  	endwin();			/* End curses mode		  */
+  	endwin();			// End curses mode
 
-	return 0;
+	return 0; */
 }

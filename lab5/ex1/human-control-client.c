@@ -21,8 +21,8 @@ int main()
     printf ("Connecting to server…");
     void *context = zmq_ctx_new ();
     void *requester = zmq_socket (context, ZMQ_REQ);
-    zmq_connect (requester, "tcp://localhost:5555");
-    printf ("\rConnected to server!\n");
+    int code = zmq_connect (requester, "tcp://localhost:5555");
+    printf ("\rConnected to server? %d\n", code);
 
     //TODO_5
     // read the character from the user
