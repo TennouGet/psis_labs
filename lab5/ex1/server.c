@@ -117,7 +117,7 @@ int main()
         // receive message from client trough socket
 
         zmq_recv (responder, &client, sizeof(remote_char_t), 0);
-        printf("recieved: %s", &client.ch);
+        //printf("recieved: %s", &client.ch);
         zmq_send (responder, "World", 5, 0);
 
 
@@ -159,7 +159,7 @@ int main()
         screen.ch = characters[i].ch;
         screen.pos_x = characters[i].x;
         screen.pos_y = characters[i].y;
-        screen.msg_type == 1;
+        screen.msg_type = 1;
         zmq_send (publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
         zmq_send (publisher, &screen, sizeof(screen), 0);
 

@@ -85,7 +85,7 @@ int main()
 
     struct remote_screen screen;
 
-    /*
+    
     // ncurses initialization
 	initscr();		    	
 	cbreak();				
@@ -98,59 +98,50 @@ int main()
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
 
-    // information about the character 
-    int ch;
-    int pos_x = WINDOW_SIZE/2;
-    int pos_y = WINDOW_SIZE/2;
-
-
-
-    direction_t  direction;
-    char str[20];
-    int n, count;
-
     while (1)
     {
         // TODO_7
         // receive message from screen trough socket
 
-        zmq_recv (subscriber, &screen, sizeof(remote_screen), 0);
+        zmq_recv (subscriber, &screen, sizeof(screen), 0);
         printf("recieved: %d", screen.pos_x);
-
-
-        //TODO_8
-        // process connection messages
-
-        if(screen.msg_type == 0){
-            characters[characters_n].ch = screen.ch;
-            characters[characters_n].x = WINDOW_SIZE/2;
-            characters[characters_n].y = WINDOW_SIZE/2;
-            characters_n++;
-        }
         
         // TODO_11
         // process the movement message
 
         int i = 0;
+        int found = 0;
         
         if(screen.msg_type == 1){
 
             for(i=0; i < characters_n; i++){
-                if(characters[i].ch == screen.ch)
+                if(characters[i].ch == screen.ch){
+                    found = 1;
                     break;
+                }
             }
 
-            wmove(my_win, characters[i].y, characters[i].x);
-            waddch(my_win,' ');
+            if(found==0){
+                characters[characters_n].ch = screen.ch;
+                characters[characters_n].x = screen.pos_x;
+                characters[characters_n].y = screen.pos_y;
+                characters_n++;
+            }
+            else{
+                wmove(my_win, characters[i].y, characters[i].x);
+                waddch(my_win,' ');
+            }
 
             wmove(my_win, screen.pos_y, screen.pos_x);
             waddch(my_win, characters[i].ch);
 
             wrefresh(my_win);
+
+            found = 0;
         }
 
     }
   	endwin();			// End curses mode
 
-	return 0; */
+	return 0;
 }
