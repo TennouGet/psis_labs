@@ -160,9 +160,9 @@ int main()
             new_position(&characters[i].y, &characters[i].x, client.direction);
 
             wmove(my_win, characters[i].y, characters[i].x);
-            //waddch(my_win, characters[i].ch);
+            waddch(my_win, client.ch);
             //characters[i].ch outputs gibberish..
-            waddch(my_win, 'A');
+            //waddch(my_win, 'A');
 
             wrefresh(my_win);
 
