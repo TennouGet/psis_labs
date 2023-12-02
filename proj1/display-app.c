@@ -1,6 +1,6 @@
 
 #include <ncurses.h>
-#include "remote-char.h"
+#include "header.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

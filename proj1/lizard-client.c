@@ -1,5 +1,5 @@
 #include <ncurses.h>
-#include "remote-char.h"
+#include "header.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,27 +29,28 @@ int main()
 
     char character[10];
 
-    printf("Select a character to use:");
+    /*printf("Select a character to use:");
 	fgets(character, 10, stdin);
-    printf("Selected character: %s.", character);
+    printf("Selected character: %s.", character);*/
 
     struct remote_char_t join, move;
+    struct response_to_client client_response;
 
     join.msg_type = 0;
-    join.ch = character[0];
+    join.ch = 0;
+    join.code = 0;
 
-    move.ch = character[0];
-    move.msg_type = 1;
-
-    // TODO_6
     // send connection message
-
-
     char buffer[10];
     zmq_send (requester, &join, sizeof(join), 0);
-    zmq_recv (requester, buffer, 10, 0);
-    printf("received: %s", buffer);
+    zmq_recv (requester, &client_response, sizeof(client_response), 0);
+    if(client_response.status == 1){
+        printf("Server response OK, lizard created. Your char: %c\n", client_response.assigned_char);
+    }
 
+    move.ch = client_response.assigned_char;
+    move.msg_type = 1;
+    move.code = client_response.code;
 
 
 	initscr();			/* Start curses mode 		*/
@@ -79,7 +80,8 @@ int main()
                 move.direction = DOWN;
                 break;
             case KEY_UP:
-                mvprintw(0,0,"%d :Up arrow is pressed", n);
+                mvprintw(0,0,"%d :Up arrow is pressed, char: %c", n, move.ch);
+
                 move.direction = UP;
                 break;
             default:
@@ -96,8 +98,11 @@ int main()
         //send the movement message
 
         zmq_send (requester, &move, sizeof(move), 0);
-        zmq_recv (requester, buffer, 10, 0);
-        printf("\rreceived: %s", buffer);
+        zmq_recv (requester, &client_response, sizeof(client_response), 0);
+        if(client_response.status == 1)
+            mvprintw(1, 0, "\rreceived: %d", client_response.status);
+        else
+            mvprintw(1, 0, "\rError, server response: %d", client_response.status);
         
     }while(ch != 27);
     
