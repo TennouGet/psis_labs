@@ -278,17 +278,12 @@ int main()
 
             //new_position(&characters[i].x, &characters[i].y, client.direction);
 
-            for(i=0; i < WINDOW_SIZE*WINDOW_SIZE*26; i++){
-                fprintf(fptr2,"%d\n",screen_matrix[i]);
-            }
-            i=0;
-
             calc_pos(characters, i, screen_matrix, client.direction);
 
             wmove(my_win, characters[i].x, characters[i].y);
             waddch(my_win, characters[i].ch);
             //characters[i].ch outputs gibberish..
-            //waddch(my_win, 'A');
+            //waddch(my_win, 'A'); 
 
             wrefresh(my_win);
 
