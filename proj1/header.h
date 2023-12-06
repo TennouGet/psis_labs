@@ -13,6 +13,18 @@ typedef struct remote_char_t {
    direction_t direction;
 } remote_char_t;
 
+
+typedef struct roach_message {
+
+   int msg_type;
+
+   int code;
+
+   int id;
+
+   direction_t direction;
+} roach_message;
+
 typedef struct remote_screen {
 
    int msg_type;
