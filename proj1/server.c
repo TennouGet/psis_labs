@@ -122,13 +122,17 @@ void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t 
 int main()
 {	
     struct char_n_pos characters[25];
-    int characters_n = 0;
+    bool occupied_chars[25];
     int i=0;
 
     int* lizard_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*sizeof(int));
 
     for(i=0; i < WINDOW_SIZE*WINDOW_SIZE; i++){
         lizard_matrix[i] = -1;
+    }
+
+    for(i=0; i < 25; i++){
+        occupied_chars[i] = 0;
     }
 
     // Socket to talk to clients
@@ -172,7 +176,10 @@ int main()
     // information about the character
     int n_of_char_to_give = 65;
     char char_to_give = 0;
-
+    int x_rand=0;
+    int y_rand=0;
+    int j=0;
+    bool found_empty_spot = false;
 
     //direction_t  direction;
 
@@ -189,20 +196,43 @@ int main()
         if(client.msg_type == 0){
 
             //srand((int)time); // uncomment THIS!
+            for(i=0; i < 25; i++){
+                if(occupied_chars[i] != 1){
+                    char_to_give = n_of_char_to_give + i;
+                    occupied_chars[i] = 1;
+                    break;
+                }
+            }
+            
 
-            char_to_give = n_of_char_to_give++;
-            characters[characters_n].ch = char_to_give;
-            characters[characters_n].code = rand();
-            characters[characters_n].x = WINDOW_SIZE/2;
-            characters[characters_n].y = WINDOW_SIZE/2;
-            client_response.code = characters[characters_n].code;
+            //char_to_give = n_of_char_to_give++;
+            characters[i].ch = char_to_give;
+            characters[i].code = rand();
 
-            lizard_matrix[characters[characters_n].x*WINDOW_SIZE + characters[characters_n].y] = characters[i].ch - 65; //number of lizard occupying space
+            while(j!=1000){
+                x_rand = rand() % (WINDOW_SIZE-1);
+                y_rand = rand() % (WINDOW_SIZE-1);
+                if(lizard_matrix[x_rand*WINDOW_SIZE + y_rand] < 0){ // ADICIONAR VERIFICAÇAO PARA ROACHES!
+                    found_empty_spot = true;
+                    break;
+                }
+                j++;
+            }
 
-            characters_n++;
+            if(found_empty_spot){
 
-            client_response.assigned_char = char_to_give;
-            client_response.status = 1;
+                characters[i].x = x_rand;
+                characters[i].y = y_rand;
+                client_response.code = characters[i].code;
+
+                lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = characters[i].ch - 65; //number of lizard occupying space
+
+                client_response.assigned_char = char_to_give;
+                client_response.status = 1;
+            }
+            else{
+                client_response.status = -2; // error 2: no empty space
+            }
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
         }
@@ -211,7 +241,7 @@ int main()
         
         if(client.msg_type == 1){
 
-            for(i=0; i < characters_n; i++){
+            for(i=0; i < 25; i++){
                 if(characters[i].ch == client.ch && characters[i].code == client.code){
                     break;
                 }
@@ -236,6 +266,12 @@ int main()
 
         if(client.msg_type == 2){
 
+            for(i=0; i < 25; i++){
+                if(characters[i].ch == client.ch && characters[i].code == client.code){
+                    break;
+                }
+            }
+
             lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1; //number of lizard occupying space
             wmove(my_win, characters[i].x, characters[i].y);
             waddch(my_win,' ');
@@ -245,6 +281,11 @@ int main()
             client_response.assigned_char = characters[i].ch;
             client_response.status = 2;
             zmq_send (responder, &client_response, sizeof(client_response), 0);
+
+            occupied_chars[i] = 0;
+            client_response.code = 0;
+            client_response.assigned_char = 0;
+            client_response.status = 0;
         }
 
         screen.ch = characters[i].ch;

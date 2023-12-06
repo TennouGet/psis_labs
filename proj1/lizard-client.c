@@ -32,6 +32,10 @@ int main()
     if(client_response.status == 1){
         printf("Server response OK, lizard created. Your char: %c\n", client_response.assigned_char);
     }
+    if(client_response.status == -2){
+        printf("Server ERROR: WINDOW FULL, TRY AGAIN. CODE: %d\n", client_response.status);
+        return 0;
+    }
 
     move.ch = client_response.assigned_char;
     move.msg_type = 1;
@@ -74,6 +78,9 @@ int main()
             case 'q':
                 mvprintw(0,0,"q is pressed, sending exit message");
                 exit_program = true;
+            case 'Q':
+                mvprintw(0,0,"Q is pressed, sending exit message");
+                exit_program = true;
             default:
                 ch = 'x';
                     break;
@@ -98,7 +105,7 @@ int main()
                 return 0;
             }
             else{
-                printf("error exiting");
+                printf("error, exiting");
             }
         }
 
