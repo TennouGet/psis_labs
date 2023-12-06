@@ -37,34 +37,6 @@ direction_t random_direction(){
 
 }
 
-void new_position(int* x, int *y, direction_t direction){
-    switch (direction)
-    {
-    case UP:
-        (*x) --;
-        if(*x ==0)
-            *x = 2;
-        break;
-    case DOWN:
-        (*x) ++;
-        if(*x ==WINDOW_SIZE-1)
-            *x = WINDOW_SIZE-3;
-        break;
-    case LEFT:
-        (*y) --;
-        if(*y ==0)
-            *y = 2;
-        break;
-    case RIGHT:
-        (*y) ++;
-        if(*y ==WINDOW_SIZE-1)
-            *y = WINDOW_SIZE-3;
-        break;
-    default:
-        break;
-    }
-}
-
 void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t direction){
 
     int n_of_client = characters[i].ch - 65;
@@ -233,7 +205,6 @@ int main()
             client_response.status = 1;
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
-            //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
         }
         
         // process the movement message
@@ -261,7 +232,19 @@ int main()
             client_response.status = 1;
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
-            //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
+        }
+
+        if(client.msg_type == 2){
+
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1; //number of lizard occupying space
+            wmove(my_win, characters[i].x, characters[i].y);
+            waddch(my_win,' ');
+            wrefresh(my_win);
+
+            client_response.code = characters[i].code;
+            client_response.assigned_char = characters[i].ch;
+            client_response.status = 2;
+            zmq_send (responder, &client_response, sizeof(client_response), 0);
         }
 
         screen.ch = characters[i].ch;
