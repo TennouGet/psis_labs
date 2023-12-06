@@ -65,18 +65,15 @@ void new_position(int* x, int *y, direction_t direction){
     }
 }
 
-void calc_pos(char_n_pos characters[25], int i, int *screen_matrix, direction_t direction){
+void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t direction){
 
     int n_of_client = characters[i].ch - 65;
 
     bool collision = false;
 
-    printf("calc_pos");
-
     int x = characters[i].x;
     int y = characters[i].y;
-
-    //int aux = *(screen_matrix + x*WINDOW_SIZE + y*WINDOW_SIZE + n_of_client);
+    int pos = x*WINDOW_SIZE + y;
 
     switch (direction)
     {
@@ -84,16 +81,15 @@ void calc_pos(char_n_pos characters[25], int i, int *screen_matrix, direction_t 
         (x) --;
         if(x ==0)
             x = 2;
-        for(int j=0; j < 25; j++){
-            if(screen_matrix[x*WINDOW_SIZE*26 + y*26 + j]){
-                collision = true;
-                characters[i].score = characters[j].score = collision_calculate_points(characters[i].score, characters[j].score);
-                break;
-            }
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
         }
+
         if(!collision){
-            screen_matrix[x*WINDOW_SIZE*26 + y*26 + n_of_client] = 1;
-            screen_matrix[characters[i].x*WINDOW_SIZE*26 + characters[i].y*26 + n_of_client] = 0;
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
         }
@@ -102,16 +98,14 @@ void calc_pos(char_n_pos characters[25], int i, int *screen_matrix, direction_t 
         (x) ++;
         if(x ==WINDOW_SIZE-1)
             x = WINDOW_SIZE-3;
-        for(int j=0; j < 25; j++){
-            if(screen_matrix[x*WINDOW_SIZE + y*WINDOW_SIZE + j]){
-                collision = true;
-                characters[i].score = characters[j].score = collision_calculate_points(characters[i].score, characters[i].score);
-                break;
-            }
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
         }
         if(!collision){
-            screen_matrix[x*y*n_of_client] = 1;
-            screen_matrix[characters[i].x*characters[i].y*n_of_client] = 0;
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
         }
@@ -120,16 +114,14 @@ void calc_pos(char_n_pos characters[25], int i, int *screen_matrix, direction_t 
         (y) --;
         if(y ==0)
             y = 2;
-        for(int j=0; j < 25; j++){
-            if(screen_matrix[x*WINDOW_SIZE + y*WINDOW_SIZE + j]){
-                collision = true;
-                characters[i].score = characters[j].score = collision_calculate_points(characters[i].score, characters[i].score);
-                break;
-            }
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
         }
         if(!collision){
-            screen_matrix[x*y*n_of_client] = 1;
-            screen_matrix[characters[i].x*characters[i].y*n_of_client] = 0;
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
         }
@@ -138,16 +130,14 @@ void calc_pos(char_n_pos characters[25], int i, int *screen_matrix, direction_t 
         (y) ++;
         if(y ==WINDOW_SIZE-1)
             y = WINDOW_SIZE-3;
-        for(int j=0; j < 25; j++){
-            if(screen_matrix[x*WINDOW_SIZE + y*WINDOW_SIZE + j]){
-                collision = true;
-                characters[i].score = characters[j].score = collision_calculate_points(characters[i].score, characters[i].score);
-                break;
-            }
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
         }
         if(!collision){
-            screen_matrix[x*y*n_of_client] = 1;
-            screen_matrix[characters[i].x*characters[i].y*n_of_client] = 0;
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
         }
@@ -163,19 +153,11 @@ int main()
     int characters_n = 0;
     int i=0;
 
-    //int screen_matrix[WINDOW_SIZE*WINDOW_SIZE*25];
-    int* screen_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*26*sizeof(int));
+    int* lizard_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*sizeof(int));
 
-    for(i=0; i < WINDOW_SIZE*WINDOW_SIZE*26; i++){
-        screen_matrix[i] = 0;
+    for(i=0; i < WINDOW_SIZE*WINDOW_SIZE; i++){
+        lizard_matrix[i] = -1;
     }
-
-    FILE *fptr;
-    FILE *fptr2;
-    fptr = fopen("output.txt","w");
-    fptr2 = fopen("output2.txt","w");
-
-    int read_fd = 0;
 
     // Socket to talk to clients
     void *context = zmq_ctx_new ();
@@ -210,21 +192,18 @@ int main()
 	noecho();	    
 
 
-    /* creates a window and draws a border */
+    // creates a window and draws a border
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
 
-    /* information about the character */
-    int ch;
-    int pos_x = WINDOW_SIZE/2;
-    int pos_y = WINDOW_SIZE/2;
-
+    // information about the character
     int n_of_char_to_give = 65;
     char char_to_give = 0;
 
 
-    direction_t  direction;
+    //direction_t  direction;
+
     i = 0;
 
     while (1)
@@ -232,7 +211,6 @@ int main()
 
         // receive message from client trough socket
         zmq_recv (responder, &client, sizeof(remote_char_t), 0);
-        //zmq_send (responder, "World", 5, 0);
 
         // process connection messages
 
@@ -247,12 +225,7 @@ int main()
             characters[characters_n].y = WINDOW_SIZE/2;
             client_response.code = characters[characters_n].code;
 
-            screen_matrix[characters[characters_n].x*WINDOW_SIZE*26 + characters[characters_n].y*26 + characters[i].ch - 65] = 1; //window-size - chars
-            
-            for(i=0; i < WINDOW_SIZE*WINDOW_SIZE*26; i++){
-                fprintf(fptr,"%d\n",screen_matrix[i]);
-            }
-            i=0;
+            lizard_matrix[characters[characters_n].x*WINDOW_SIZE + characters[characters_n].y] = characters[i].ch - 65; //number of lizard occupying space
 
             characters_n++;
 
@@ -276,14 +249,10 @@ int main()
             wmove(my_win, characters[i].x, characters[i].y);
             waddch(my_win,' ');
 
-            //new_position(&characters[i].x, &characters[i].y, client.direction);
-
-            calc_pos(characters, i, screen_matrix, client.direction);
+            calc_pos(characters, i, lizard_matrix, client.direction);
 
             wmove(my_win, characters[i].x, characters[i].y);
             waddch(my_win, characters[i].ch);
-            //characters[i].ch outputs gibberish..
-            //waddch(my_win, 'A'); 
 
             wrefresh(my_win);
 
@@ -304,7 +273,6 @@ int main()
 
     }
   	endwin();			// End curses mode
-    fclose(fptr);
 
 	return 0;
 }
