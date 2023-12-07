@@ -26,6 +26,8 @@ typedef struct char_n_pos {
 
    int score;
 
+   direction_t direction;
+
 } char_n_pos;
 
 int collision_calculate_points(int score_a, int score_b){
@@ -64,6 +66,7 @@ void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t 
             lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
+            characters[i].direction = direction;
         }
         break;
     case DOWN:
@@ -80,6 +83,7 @@ void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t 
             lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
+            characters[i].direction = direction;
         }
         break;
     case LEFT:
@@ -96,6 +100,7 @@ void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t 
             lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
+            characters[i].direction = direction;
         }
         break;
     case RIGHT:
@@ -112,6 +117,7 @@ void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t 
             lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
             characters[i].x = x;
             characters[i].y = y;
+            characters[i].direction = direction;
         }
         break;
     default:
@@ -119,20 +125,95 @@ void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t 
     }
 }
 
+void update_window(WINDOW * my_win, char_n_pos lizard, int mode){
+
+    int i = 0;
+
+    if(mode==0){ //delete lizard at previous position
+
+        //wmove(my_win, characters[i].x, characters[i].y);
+        //waddch(my_win,' ');
+        mvwaddch(my_win, lizard.x, lizard.y, ' ');
+
+        switch (lizard.direction)
+        {
+        case UP:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x+i, lizard.y, ' ');
+            }
+            break;
+        case DOWN:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x-i, lizard.y, ' ');
+            }
+            break;
+        case LEFT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x, lizard.y+i, ' ');
+            }
+            break;
+        case RIGHT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x, lizard.y-i, ' ');
+            }
+            break;
+        default:
+            mvprintw(WINDOW_SIZE+3, 0, "\rERROR: no lizard direction.");
+            break;
+        }
+    }
+
+    if(mode==1){ //add lizard at new position
+        
+        switch (lizard.direction)
+        {
+        case UP:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x+i, lizard.y, '.');
+            }
+            break;
+        case DOWN:
+            for(i=0; i < 5; i++){
+                //mvwaddch(my_win, lizard.x, lizard.y-i, '.');
+                wmove(my_win, lizard.x-i, lizard.y);
+                waddch(my_win, '.');
+            }
+            break;
+        case LEFT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x, lizard.y+i, '.');
+            }
+            break;
+        case RIGHT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, lizard.x, lizard.y-i, '.');
+            }
+            break;
+        default:
+            mvprintw(WINDOW_SIZE+3, 0, "\rERROR: no lizard direction.");
+            break;
+        }
+
+        mvwaddch(my_win, lizard.x, lizard.y, lizard.ch);
+    }
+
+
+
+
+
+}
+
 int main()
 {	
     struct char_n_pos characters[25];
-    bool occupied_chars[25];
     int i=0;
 
     int* lizard_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*sizeof(int));
 
     for(i=0; i < WINDOW_SIZE*WINDOW_SIZE; i++){
         lizard_matrix[i] = -1;
-    }
-
-    for(i=0; i < 25; i++){
-        occupied_chars[i] = 0;
+        if(i<25)
+            characters[i].code = 0;
     }
 
     // Socket to talk to clients
@@ -197,9 +278,8 @@ int main()
 
             //srand((int)time); // uncomment THIS!
             for(i=0; i < 25; i++){
-                if(occupied_chars[i] != 1){
+                if(characters[i].code == 0){
                     char_to_give = n_of_char_to_give + i;
-                    occupied_chars[i] = 1;
                     break;
                 }
             }
@@ -229,6 +309,7 @@ int main()
 
                 client_response.assigned_char = char_to_give;
                 client_response.status = 1;
+                client_response.score = 0;
             }
             else{
                 client_response.status = -2; // error 2: no empty space
@@ -247,19 +328,26 @@ int main()
                 }
             }
 
-            wmove(my_win, characters[i].x, characters[i].y);
-            waddch(my_win,' ');
+            //wmove(my_win, characters[i].x, characters[i].y);
+            //waddch(my_win,' ');
+
+            update_window(my_win, characters[i], 0);
 
             calc_pos(characters, i, lizard_matrix, client.direction);
 
-            wmove(my_win, characters[i].x, characters[i].y);
-            waddch(my_win, characters[i].ch);
+            //characters[i].direction = client.direction;
+
+            update_window(my_win, characters[i], 1);
+
+            //wmove(my_win, characters[i].x, characters[i].y);
+            //waddch(my_win, characters[i].ch);
 
             wrefresh(my_win);
 
             client_response.code = characters[i].code;
             client_response.assigned_char = characters[i].ch;
             client_response.status = 1;
+            client_response.score = characters[i].score;
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
         }
@@ -282,10 +370,15 @@ int main()
             client_response.status = 2;
             zmq_send (responder, &client_response, sizeof(client_response), 0);
 
-            occupied_chars[i] = 0;
             client_response.code = 0;
             client_response.assigned_char = 0;
             client_response.status = 0;
+
+            characters[i].ch = 0;
+            characters[i].score = 0;
+            characters[i].code = 0;
+            characters[i].x = 0;
+            characters[i].y = 0;
         }
 
         screen.ch = characters[i].ch;
@@ -297,6 +390,8 @@ int main()
 
     }
   	endwin();			// End curses mode
+
+    free(lizard_matrix);
 
 	return 0;
 }
