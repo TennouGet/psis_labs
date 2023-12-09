@@ -128,8 +128,6 @@ void update_window(WINDOW * my_win, char_n_pos lizard, int mode){
 
     if(mode==0){ //delete lizard at previous position
 
-        //wmove(my_win, lizards[i].x, lizards[i].y);
-        //waddch(my_win,' ');
         mvwaddch(my_win, lizard.x, lizard.y, ' ');
 
         switch (lizard.direction)
@@ -193,10 +191,6 @@ void update_window(WINDOW * my_win, char_n_pos lizard, int mode){
 
         mvwaddch(my_win, lizard.x, lizard.y, lizard.ch);
     }
-
-
-
-
 
 }
 
@@ -269,7 +263,7 @@ int main()
 
     screen.ch = 'a';
     screen.msg_type=0;
-    screen.pos_x=0;
+    screen.old_x=0;
 
     zmq_send (publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
     zmq_send (publisher, &screen, sizeof(screen), 0);
@@ -306,7 +300,7 @@ int main()
         // receive message from client trough socket
         zmq_recv (responder, &client, sizeof(remote_char_t), 0);
 
-        // process connection messages
+        // process lizard connection messages
         if(client.msg_type == 0){
 
             //srand((int)time); // uncomment THIS!
@@ -358,7 +352,7 @@ int main()
             zmq_send (responder, &client_response, sizeof(client_response), 0);
         }
         
-        // process the movement message  
+        // process lizard movement message  
         if(client.msg_type == 1){
 
             for(i=0; i < 25; i++){
@@ -366,6 +360,10 @@ int main()
                     break;
                 }
             }
+
+            screen.old_x = lizards[i].x;
+            screen.old_y = lizards[i].y;
+            screen.old_direction = lizards[i].direction;
 
             update_window(my_win, lizards[i], 0); // clean previous lizard
 
@@ -381,9 +379,17 @@ int main()
             client_response.score = lizards[i].score;
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
+
+            screen.ch = lizards[i].ch;
+            screen.new_x = lizards[i].x;
+            screen.new_y = lizards[i].y;
+            screen.new_direction = lizards[i].direction;
+            screen.msg_type = 1;
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            zmq_send(publisher, &screen, sizeof(screen), 0);
         }
 
-        // process the leave message
+        // process lizard leave message
         if(client.msg_type == 2){
 
             for(i=0; i < 25; i++){
@@ -413,6 +419,7 @@ int main()
             lizards[i].y = 0;
         }
 
+        // process roach connection message
         if(client.msg_type == 3){
 
 
@@ -467,6 +474,7 @@ int main()
             //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
         }
 
+        // process roach movement message
         if(client.msg_type == 4){
 
             int i = 0;
@@ -528,15 +536,15 @@ int main()
             client_response.status = 1;
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
-            //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
+            
+            /*screen.ch = lizards[i].ch;
+            screen.pos_x = x;
+            screen.pos_y = y;
+            screen.msg_type = 2;
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            zmq_send(publisher, &screen, sizeof(screen), 0);*/
+            
         }
-
-        screen.ch = lizards[i].ch;
-        screen.pos_x = lizards[i].x;
-        screen.pos_y = lizards[i].y;
-        screen.msg_type = 1;
-        zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-        zmq_send(publisher, &screen, sizeof(screen), 0);
 
     }
   	endwin();			// End curses mode

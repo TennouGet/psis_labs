@@ -23,37 +23,75 @@ typedef struct char_n_pos {
 
 } char_n_pos;
 
-direction_t random_direction(){
-    return  random()%4;
+void update_window(WINDOW * my_win, remote_screen screen, int mode){
 
-}
+    int i = 0;
 
-void new_position(int* x, int *y, direction_t direction){
-    switch (direction)
-    {
-    case UP:
-        (*x) --;
-        if(*x ==0)
-            *x = 2;
-        break;
-    case DOWN:
-        (*x) ++;
-        if(*x ==WINDOW_SIZE-1)
-            *x = WINDOW_SIZE-3;
-        break;
-    case LEFT:
-        (*y) --;
-        if(*y ==0)
-            *y = 2;
-        break;
-    case RIGHT:
-        (*y) ++;
-        if(*y ==WINDOW_SIZE-1)
-            *y = WINDOW_SIZE-3;
-        break;
-    default:
-        break;
+    if(mode==0 || mode==2){ //delete lizard at previous position
+
+        mvwaddch(my_win, screen.old_x, screen.old_y, ' ');
+
+        switch (screen.old_direction)
+        {
+        case UP:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.old_x+i, screen.old_y, ' ');
+            }
+            break;
+        case DOWN:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.old_x-i, screen.old_y, ' ');
+            }
+            break;
+        case LEFT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.old_x, screen.old_y+i, ' ');
+            }
+            break;
+        case RIGHT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.old_x, screen.old_y-i, ' ');
+            }
+            break;
+        default:
+            mvprintw(WINDOW_SIZE+3, 0, "\rERROR: no lizard direction.");
+            break;
+        }
     }
+
+    if(mode==1 || mode==2){ //add lizard at new position
+        
+        switch (screen.new_direction)
+        {
+        case UP:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.new_x+i, screen.new_y, '.');
+            }
+            break;
+        case DOWN:
+            for(i=0; i < 5; i++){
+                wmove(my_win, screen.new_x-i, screen.new_y);
+                waddch(my_win, '.');
+            }
+            break;
+        case LEFT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.new_x, screen.new_y+i, '.');
+            }
+            break;
+        case RIGHT:
+            for(i=0; i < 5; i++){
+                mvwaddch(my_win, screen.new_x, screen.new_y-i, '.');
+            }
+            break;
+        default:
+            mvprintw(WINDOW_SIZE+3, 0, "\rERROR: no lizard direction.");
+            break;
+        }
+
+        mvwaddch(my_win, screen.new_x, screen.new_y, screen.ch);
+    }
+
 }
 
 int main()
@@ -71,7 +109,7 @@ int main()
     // Socket to talk to screns
     void *context = zmq_ctx_new();
     void *subscriber = zmq_socket(context, ZMQ_SUB);
-    zmq_connect(subscriber, "tcp://localhost:5556");
+    zmq_connect(subscriber, "tcp://localhost:5557");
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
     printf("Connected to server");
@@ -80,17 +118,16 @@ int main()
 
     char buffer[20];
 
-    zmq_recv (subscriber, buffer, strlen(buffer), 0);
-    printf("buffer: %s", buffer);
-
     struct remote_screen screen;
 
+    zmq_recv (subscriber, buffer, strlen(buffer), 0);
+    printf("buffer: %s", buffer);
     
     // ncurses initialization
-	initscr();		    	
-	cbreak();				
-    keypad(stdscr, TRUE);   
-	noecho();	    
+	initscr();
+	cbreak();
+    keypad(stdscr, TRUE);
+	noecho();
 
 
     // creates a window and draws a border 
@@ -100,44 +137,20 @@ int main()
 
     while (1)
     {
-        // TODO_7
-        // receive message from screen trough socket
 
+        // receive message from screen trough socket
         zmq_recv (subscriber, &screen, sizeof(screen), 0);
-        printf("recieved: %d", screen.pos_x);
         
-        // TODO_11
         // process the movement message
 
         int i = 0;
-        int found = 0;
         
         if(screen.msg_type == 1){
 
-            for(i=0; i < characters_n; i++){
-                if(characters[i].ch == screen.ch){
-                    found = 1;
-                    break;
-                }
-            }
-
-            if(found==0){
-                characters[characters_n].ch = screen.ch;
-                characters[characters_n].x = screen.pos_x;
-                characters[characters_n].y = screen.pos_y;
-                characters_n++;
-            }
-            else{
-                wmove(my_win, characters[i].y, characters[i].x);
-                waddch(my_win,' ');
-            }
-
-            wmove(my_win, screen.pos_y, screen.pos_x);
-            waddch(my_win, characters[i].ch);
+            
+            update_window(my_win, screen, 2);
 
             wrefresh(my_win);
-
-            found = 0;
         }
 
     }

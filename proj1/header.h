@@ -28,7 +28,9 @@ typedef struct remote_screen {
 
    char ch;
 
-   int pos_x, pos_y;
+   int old_x, old_y, new_x, new_y;
+
+   direction_t old_direction, new_direction;
 
 } remote_screen;
 
