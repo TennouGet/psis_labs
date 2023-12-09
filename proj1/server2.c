@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <string.h>
 #include <time.h>
+#include <stdio.h>
+#include <math.h>
 
 
 typedef struct char_n_pos {
@@ -25,8 +27,6 @@ typedef struct char_n_pos {
    int y;
 
    int score;
-
-   direction_t direction;
 
 } char_n_pos;
 
@@ -67,14 +67,14 @@ void new_position(int* x, int *y, direction_t direction){
     }
 }
 
-void calc_pos(char_n_pos lizards[25], int i, int *lizard_matrix, direction_t direction){
+void calc_pos(char_n_pos characters[25], int i, int *lizard_matrix, direction_t direction){
 
-    int n_of_client = lizards[i].ch - 65;
+    int n_of_client = characters[i].ch - 65;
 
     bool collision = false;
 
-    int x = lizards[i].x;
-    int y = lizards[i].y;
+    int x = characters[i].x;
+    int y = characters[i].y;
     int pos = x*WINDOW_SIZE + y;
 
     switch (direction)
@@ -83,130 +83,86 @@ void calc_pos(char_n_pos lizards[25], int i, int *lizard_matrix, direction_t dir
         (x) --;
         if(x ==0)
             x = 2;
-        break;
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
+        }
 
+        if(!collision){
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
+            characters[i].x = x;
+            characters[i].y = y;
+        }
+        break;
     case DOWN:
         (x) ++;
         if(x ==WINDOW_SIZE-1)
             x = WINDOW_SIZE-3;
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
+        }
+        if(!collision){
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
+            characters[i].x = x;
+            characters[i].y = y;
+        }
         break;
-
     case LEFT:
         (y) --;
         if(y ==0)
             y = 2;
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
+        }
+        if(!collision){
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
+            characters[i].x = x;
+            characters[i].y = y;
+        }
         break;
-
     case RIGHT:
         (y) ++;
         if(y ==WINDOW_SIZE-1)
             y = WINDOW_SIZE-3;
+        if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+            characters[i].score = characters[lizard_matrix[pos]].score = collision_calculate_points(characters[i].score, characters[lizard_matrix[pos]].score);
+            break;
+        }
+        if(!collision){
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[characters[i].x*WINDOW_SIZE + characters[i].y] = -1;
+            characters[i].x = x;
+            characters[i].y = y;
+        }
         break;
-
     default:
         break;
     }
-
-    if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
-            collision = true;
-            lizards[i].score = lizards[lizard_matrix[pos]].score = collision_calculate_points(lizards[i].score, lizards[lizard_matrix[pos]].score);
-    }
-
-    if(!collision){
-            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
-            lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1;
-            lizards[i].x = x;
-            lizards[i].y = y;
-            lizards[i].direction = direction;
-    }
-
-}
-
-void update_window(WINDOW * my_win, char_n_pos lizard, int mode){
-
-    int i = 0;
-
-    if(mode==0){ //delete lizard at previous position
-
-        //wmove(my_win, lizards[i].x, lizards[i].y);
-        //waddch(my_win,' ');
-        mvwaddch(my_win, lizard.x, lizard.y, ' ');
-
-        switch (lizard.direction)
-        {
-        case UP:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x+i, lizard.y, ' ');
-            }
-            break;
-        case DOWN:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x-i, lizard.y, ' ');
-            }
-            break;
-        case LEFT:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x, lizard.y+i, ' ');
-            }
-            break;
-        case RIGHT:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x, lizard.y-i, ' ');
-            }
-            break;
-        default:
-            mvprintw(WINDOW_SIZE+3, 0, "\rERROR: no lizard direction.");
-            break;
-        }
-    }
-
-    if(mode==1){ //add lizard at new position
-        
-        switch (lizard.direction)
-        {
-        case UP:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x+i, lizard.y, '.');
-            }
-            break;
-        case DOWN:
-            for(i=0; i < 5; i++){
-                //mvwaddch(my_win, lizard.x, lizard.y-i, '.');
-                wmove(my_win, lizard.x-i, lizard.y);
-                waddch(my_win, '.');
-            }
-            break;
-        case LEFT:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x, lizard.y+i, '.');
-            }
-            break;
-        case RIGHT:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x, lizard.y-i, '.');
-            }
-            break;
-        default:
-            mvprintw(WINDOW_SIZE+3, 0, "\rERROR: no lizard direction.");
-            break;
-        }
-
-        mvwaddch(my_win, lizard.x, lizard.y, lizard.ch);
-    }
-
-
-
-
-
 }
 
 int main()
 {	
+    struct char_n_pos characters[25];
+    int characters_n = 0;
+    int i=0;
+
+
     //added this
     int id_roach = 0;
     int id_roach_client = 0;
     int max_roaches = WINDOW_SIZE*WINDOW_SIZE/3;
     int r_space = max_roaches;
+    //int* universal_rcode = (int *) malloc(max_roaches*10*sizeof(int));
+
 
     // client code | client barata code (0-9) | server barata code (0-(maxroaches-1))
     int code_to_barataid[max_roaches][3];
@@ -234,15 +190,10 @@ int main()
 
     // ----------------------------
 
-    struct char_n_pos lizards[25];
-    int i=0;
-
     int* lizard_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*sizeof(int));
 
     for(i=0; i < WINDOW_SIZE*WINDOW_SIZE; i++){
         lizard_matrix[i] = -1;
-        if(i<25)
-            lizards[i].code = 0;
     }
 
     // Socket to talk to clients
@@ -260,7 +211,7 @@ int main()
     struct remote_char_t client;
     struct remote_screen screen;
     struct response_to_client client_response;
-
+    
     // added this
     struct response_to_client roach_response;
     // --------------------------
@@ -290,11 +241,7 @@ int main()
     // information about the character
     int n_of_char_to_give = 65;
     char char_to_give = 0;
-    int x_rand=0;
-    int y_rand=0;
-    int j=0;
-    bool found_empty_spot = false;
-    bool server_full = false;
+
 
     //direction_t  direction;
 
@@ -307,111 +254,29 @@ int main()
         zmq_recv (responder, &client, sizeof(remote_char_t), 0);
 
         // process connection messages
+
         if(client.msg_type == 0){
 
             //srand((int)time); // uncomment THIS!
-            for(i=0; i < 25; i++){
-                if(lizards[i].code == 0){
-                    char_to_give = n_of_char_to_give + i;
-                    break;
-                }
-            }
 
-            if(char_to_give == '0')    //server full
-                server_full = true;
-            
-            if(!server_full){
-                while(j!=1000){
-                    x_rand = rand() % (WINDOW_SIZE-1);
-                    y_rand = rand() % (WINDOW_SIZE-1);
-                    if(lizard_matrix[x_rand*WINDOW_SIZE + y_rand] == -1){ // ADICIONAR VERIFICAÇAO PARA ROACHES!
-                        found_empty_spot = true;
-                        break;
-                    }
-                    j++;
-                }
-            }
+            char_to_give = n_of_char_to_give++;
+            characters[characters_n].ch = char_to_give;
+            characters[characters_n].code = rand();
+            characters[characters_n].x = WINDOW_SIZE/2;
+            characters[characters_n].y = WINDOW_SIZE/2;
+            client_response.code = characters[characters_n].code;
 
-            if(found_empty_spot){
-                
-                lizards[i].ch = char_to_give;
-                lizards[i].code = rand();
-                lizards[i].x = x_rand;
-                lizards[i].y = y_rand;
+            lizard_matrix[characters[characters_n].x*WINDOW_SIZE + characters[characters_n].y] = characters[i].ch - 65; //number of lizard occupying space
 
-                lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = lizards[i].ch - 65; //number of lizard occupying space
+            characters_n++;
 
-                client_response.code = lizards[i].code;
-                client_response.assigned_char = lizards[i].ch;
-                client_response.status = 1;
-                client_response.score = 0;
-            }
-            if(server_full){
-                client_response.status = -1; // error -1: server full
-            }
-            if(!server_full && !found_empty_spot){
-                client_response.status = -2; // error -2: no empty space
-            }
-
-            char_to_give = '0';
+            client_response.assigned_char = char_to_give;
+            client_response.status = 1;
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
+            //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
         }
         
-        // process the movement message  
-        if(client.msg_type == 1){
-
-            for(i=0; i < 25; i++){
-                if(lizards[i].ch == client.ch && lizards[i].code == client.code){
-                    break;
-                }
-            }
-
-            update_window(my_win, lizards[i], 0); // clean previous lizard
-
-            calc_pos(lizards, i, lizard_matrix, client.direction); // calculate new position
-
-            update_window(my_win, lizards[i], 1); // draw new lizard
-
-            wrefresh(my_win);
-
-            client_response.code = lizards[i].code;
-            client_response.assigned_char = lizards[i].ch;
-            client_response.status = 1;
-            client_response.score = lizards[i].score;
-
-            zmq_send (responder, &client_response, sizeof(client_response), 0);
-        }
-
-        // process the leave message
-        if(client.msg_type == 2){
-
-            for(i=0; i < 25; i++){
-                if(lizards[i].ch == client.ch && lizards[i].code == client.code){
-                    break;
-                }
-            }
-
-            lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1; //number of lizard occupying space
-            wmove(my_win, lizards[i].x, lizards[i].y);
-            waddch(my_win,' ');
-            wrefresh(my_win);
-
-            client_response.code = lizards[i].code;
-            client_response.assigned_char = lizards[i].ch;
-            client_response.status = 2;
-            zmq_send (responder, &client_response, sizeof(client_response), 0);
-
-            client_response.code = 0;
-            client_response.assigned_char = 0;
-            client_response.status = 0;
-
-            lizards[i].ch = 0;
-            lizards[i].score = 0;
-            lizards[i].code = 0;
-            lizards[i].x = 0;
-            lizards[i].y = 0;
-        }
 
         if(client.msg_type == 3){
 
@@ -531,17 +396,45 @@ int main()
             //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
         }
 
-        screen.ch = lizards[i].ch;
-        screen.pos_x = lizards[i].x;
-        screen.pos_y = lizards[i].y;
+        // process the movement message
+        
+        if(client.msg_type == 1){
+
+            for(i=0; i < characters_n; i++){
+                if(characters[i].ch == client.ch && characters[i].code == client.code){
+                    break;
+                }
+            }
+
+            wmove(my_win, characters[i].x, characters[i].y);
+            waddch(my_win,' ');
+
+            calc_pos(characters, i, lizard_matrix, client.direction);
+
+            wmove(my_win, characters[i].x, characters[i].y);
+            waddch(my_win, characters[i].ch);
+
+            wrefresh(my_win);
+
+            client_response.code = characters[i].code;
+            client_response.assigned_char = characters[i].ch;
+            client_response.status = 1;
+
+            zmq_send (responder, &client_response, sizeof(client_response), 0);
+            //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
+        }
+
+        
+        screen.ch = characters[i].ch;
+        screen.pos_x = characters[i].x;
+        screen.pos_y = characters[i].y;
         screen.msg_type = 1;
         zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
         zmq_send(publisher, &screen, sizeof(screen), 0);
+        
 
     }
   	endwin();			// End curses mode
-
-    free(lizard_matrix);
 
 	return 0;
 }

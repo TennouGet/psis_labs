@@ -10,22 +10,17 @@ typedef struct remote_char_t {
 
    char ch;
 
-   int id;
+   int n_roaches;
+
+   int r_scores[10];
 
    direction_t direction;
+
+   direction_t r_direction[10];
+
+   int r_bool[10];
 } remote_char_t;
 
-
-typedef struct roach_message {
-
-   int msg_type;
-
-   int code;
-
-   int id;
-
-   direction_t direction;
-} roach_message;
 
 typedef struct remote_screen {
 
