@@ -32,6 +32,8 @@ typedef struct remote_screen {
 
    direction_t old_direction, new_direction;
 
+   int screen_roaches[10][5];
+
 } remote_screen;
 
 typedef struct response_to_client {

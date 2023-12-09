@@ -101,6 +101,20 @@ int main()
     struct char_n_pos characters[10];
     int characters_n = 0;
 
+    // screen matrix 
+    int screen_roaches[10][5];
+
+    int n = 0;
+    while(n!=10){
+        screen_roaches[n][0]=0;
+        screen_roaches[n][1]=0;
+        screen_roaches[n][2]=0;
+        screen_roaches[n][3]=0;
+        screen_roaches[n][4]=0;
+        n++;
+    }
+
+
     
     int read_fd = 0;
 
@@ -146,6 +160,14 @@ int main()
         int i = 0;
         
         if(screen.msg_type == 1){
+
+            
+            update_window(my_win, screen, 2);
+
+            wrefresh(my_win);
+        }
+
+        if(screen.msg_type == 3){
 
             
             update_window(my_win, screen, 2);

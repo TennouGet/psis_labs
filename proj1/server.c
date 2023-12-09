@@ -217,6 +217,7 @@ int main()
     // pos x || pos y || server barata code (0-(maxroaches-1))
     int position_to_barata[WINDOW_SIZE][WINDOW_SIZE][max_roaches];
 
+
     int n = 0;
     int x = 0;
     int y = 0;
@@ -235,10 +236,23 @@ int main()
 
     n = 0;
     while(n!=max_roaches){
+        barataid_to_pos[n][0] = 0;
+        barataid_to_pos[n][1] = 0;
+        barataid_to_pos[n][2] = 0;
         barataid_to_pos[n][3] = 0;
+
         r_respawn_list[n]=0;
+
+        code_to_barataid[n][0] = 0;
+        code_to_barataid[n][1] = 0;
+        code_to_barataid[n][2] = 0;
+
         n++;
     }
+
+    
+
+
 
     // ----------------------------
 
@@ -320,10 +334,10 @@ int main()
             int id = time_to_r_id[c_r_index];
             barataid_to_pos[id][3]=0;
             //roach x pos
-            int x = rand()%WINDOW_SIZE;
+            int x = 1+rand()%(WINDOW_SIZE-3);
             barataid_to_pos[id][0] = x;
             //roach y pos
-            int y = rand()%WINDOW_SIZE;
+            int y = 1+rand()%(WINDOW_SIZE-3);
             barataid_to_pos[id][1] = y;
 
             i=0;
@@ -370,6 +384,7 @@ int main()
                 lizards[i].code = rand();
                 lizards[i].x = x_rand;
                 lizards[i].y = y_rand;
+                lizards[i].score = 0;
 
                 lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = lizards[i].ch - 65; //number of lizard occupying space
 
@@ -504,10 +519,10 @@ int main()
                     code_to_barataid[id_roach_client+i][2] = id_roach;
                     
                     //roach x pos
-                    int x = rand()%WINDOW_SIZE;
+                    int x = 1+rand()%(WINDOW_SIZE-3);
                     barataid_to_pos[id_roach][0] = x;
                     //roach y pos
-                    int y = rand()%WINDOW_SIZE;
+                    int y = 1+rand()%(WINDOW_SIZE-3);
                     barataid_to_pos[id_roach][1] = y;
                     //roach value
                     barataid_to_pos[id_roach][2] = client.r_scores[i];
@@ -600,6 +615,13 @@ int main()
                             }
                             position_to_barata[x][y][n] = roach_code;
 
+                            screen.screen_roaches[b][0] = x;
+                            screen.screen_roaches[b][1] = y;
+                            screen.screen_roaches[b][2] = v;
+                            screen.screen_roaches[b][3] = client.code;
+                            screen.screen_roaches[b][4] = b;
+
+
                         }  
                     }
                     wrefresh(my_win);
@@ -610,15 +632,13 @@ int main()
 
             client_response.code = client.code;
             client_response.status = 1;
+        
 
             zmq_send (responder, &client_response, sizeof(client_response), 0);
             
-            /*screen.ch = lizards[i].ch;
-            screen.pos_x = x;
-            screen.pos_y = y;
-            screen.msg_type = 2;
+            screen.msg_type = 3;
             zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-            zmq_send(publisher, &screen, sizeof(screen), 0);*/
+            zmq_send(publisher, &screen, sizeof(screen), 0);
         }
 
     }

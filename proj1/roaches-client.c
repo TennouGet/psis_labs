@@ -8,6 +8,7 @@
 #include <string.h>
 #include <ncurses.h>
 #include <zmq.h>
+#include <time.h>
 
 
 direction_t random_direction(){
@@ -29,6 +30,9 @@ int main(int argc, char **argv)
 
     join.msg_type = 3;
     join.code = 0;
+
+    time_t t;
+    srand((unsigned) time(&t));
 
     int n_roaches = 1 + rand()%9;
     //n_roaches=10;
