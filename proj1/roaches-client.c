@@ -31,6 +31,7 @@ int main(int argc, char **argv)
     join.code = 0;
 
     int n_roaches = 1 + rand()%9;
+    //n_roaches=10;
 
     int i = 0;
     while (i!=n_roaches){
@@ -41,6 +42,7 @@ int main(int argc, char **argv)
 
     
     join.n_roaches = n_roaches;
+    
 
     // send connection message
     char buffer[10];
@@ -49,6 +51,10 @@ int main(int argc, char **argv)
     if(roach_response.status == 1){
         printf("Server response OK, roaches created.\n");
     }
+    else{
+        printf("Too many roaches! They are everywhere!\n");
+        exit(0);
+    }
 
 
     
@@ -56,7 +62,6 @@ int main(int argc, char **argv)
 
     move.msg_type = 4;
     move.code = roach_response.code;
-    //move.ch = "";
 
 
     int ch;

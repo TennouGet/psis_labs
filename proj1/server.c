@@ -202,6 +202,12 @@ int main()
     int max_roaches = WINDOW_SIZE*WINDOW_SIZE/3;
     int r_space = max_roaches;
 
+    time_t r_respawn_list[max_roaches];
+    time_t now;
+    int c_a_index = 0;
+    int c_r_index = 0;
+    int time_to_r_id[max_roaches];
+
     // client code | client barata code (0-9) | server barata code (0-(maxroaches-1))
     int code_to_barataid[max_roaches][3];
     // INDEXED BY: server barata code (0-(maxroaches-1)) : pos x | pos y | barata value
@@ -300,6 +306,30 @@ int main()
         // receive message from client trough socket
         zmq_recv (responder, &client, sizeof(remote_char_t), 0);
 
+        //check time to see if a roach can respawn
+        time(&now);
+        if(now>=r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
+            int id = time_to_r_id[c_r_index];
+            barataid_to_pos[id][3]=0;
+            //roach x pos
+            int x = rand()%WINDOW_SIZE;
+            barataid_to_pos[id][0] = x;
+            //roach y pos
+            int y = rand()%WINDOW_SIZE;
+            barataid_to_pos[id][1] = y;
+
+            i=0;
+            while(position_to_barata[x][y][i]!=-1){
+                i++;
+            }
+            position_to_barata[x][y][i] = barataid_to_pos[id][2];
+
+            c_r_index++;
+        }
+        if(c_r_index==max_roaches){
+            c_r_index=0;
+        }
+
         // process lizard connection messages
         if(client.msg_type == 0){
 
@@ -369,6 +399,34 @@ int main()
 
             calc_pos(lizards, i, lizard_matrix, client.direction); // calculate new position
 
+            //----------------------------------------------------------
+
+
+            int q = 0;
+            int eaten_barata_id = 0;
+            while (q!=max_roaches){
+                if (position_to_barata[lizards[i].x][lizards[i].y][q]!=-1){
+                    
+                    eaten_barata_id = position_to_barata[lizards[i].x][lizards[i].y][q];
+
+                    lizards[i].score = lizards[i].score + barataid_to_pos[eaten_barata_id][2];
+
+                    barataid_to_pos[eaten_barata_id][3] = 1;
+                    position_to_barata[lizards[i].x][lizards[i].y][q]=-1;
+
+                    r_respawn_list[c_a_index]= time(&now) + 5;
+                    time_to_r_id[c_a_index] = eaten_barata_id;
+
+                    c_a_index++;
+                    if (c_a_index==max_roaches){
+                        c_a_index=0;
+                    }
+                }
+                q++;
+            }
+
+            //----------------------------------------------------------
+
             update_window(my_win, lizards[i], 1); // draw new lizard
 
             wrefresh(my_win);
@@ -428,50 +486,48 @@ int main()
             if(r_space-n_roaches>=0){
                 //accept connection
                 r_space = r_space-n_roaches;
+
+                int code = rand();
+
+                int i = 0;
+                while (i!=n_roaches){
+                    code_to_barataid[id_roach_client+i][0] = code;
+                    code_to_barataid[id_roach_client+i][1] = i;
+                    code_to_barataid[id_roach_client+i][2] = id_roach;
+                    
+                    //roach x pos
+                    int x = rand()%WINDOW_SIZE;
+                    barataid_to_pos[id_roach][0] = x;
+                    //roach y pos
+                    int y = rand()%WINDOW_SIZE;
+                    barataid_to_pos[id_roach][1] = y;
+                    //roach value
+                    barataid_to_pos[id_roach][2] = client.r_scores[i];
+
+
+                    //storing the roach in a 3 dimensional matrix that represents the map and the high represents the amount of roaches on the spot
+                    int n = 0;
+                    while(position_to_barata[x][y][n]!=-1){
+                        n++;
+                    }
+                    position_to_barata[x][y][n] = id_roach;
+
+
+                    id_roach++;
+                    i++;
+                }
+
+                id_roach_client = id_roach_client + 1;
+
+                roach_response.status = 1;
+                roach_response.code = code;
             }
             else{
                 //reject
-
+                roach_response.status = 0;
             }
            
-            
-            int code = rand();
-
-            int i = 0;
-            while (i!=n_roaches){
-                code_to_barataid[id_roach_client+i][0] = code;
-                code_to_barataid[id_roach_client+i][1] = i;
-                code_to_barataid[id_roach_client+i][2] = id_roach;
-                
-                //roach x pos
-                int x = rand()%WINDOW_SIZE;
-                barataid_to_pos[id_roach][0] = x;
-                //roach y pos
-                int y = rand()%WINDOW_SIZE;
-                barataid_to_pos[id_roach][1] = y;
-                //roach value
-                barataid_to_pos[id_roach][2] = client.r_scores[i];
-
-
-                //storing the roach in a 3 dimensional matrix that represents the map and the high represents the amount of roaches on the spot
-                int n = 0;
-                while(position_to_barata[x][y][n]!=-1){
-                    n++;
-                }
-                position_to_barata[x][y][n] = id_roach;
-
-
-                id_roach++;
-                i++;
-            }
-
-            id_roach_client = id_roach_client + 1;
-
-            roach_response.status = 1;
-            roach_response.code = code;
-
             zmq_send (responder, &roach_response, sizeof(roach_response), 0);
-            //zmq_recv (responder, &client, sizeof(remote_char_t), 0);
         }
 
         // process roach movement message
@@ -493,44 +549,56 @@ int main()
 
                     int roach_code = code_to_barataid[i][2];
 
-                    int x = barataid_to_pos[roach_code][0];
-                    int y = barataid_to_pos[roach_code][1];
-                    int v = barataid_to_pos[roach_code][2];
+                    if (barataid_to_pos[roach_code][3]!=1){
                         
-                    //delete old information about barata position on the 3d matrix
-                    int n = 0;
-                    while(position_to_barata[x][y][n]!=roach_code){
-                        n++;
+                        
+                        int x = barataid_to_pos[roach_code][0];
+                        int y = barataid_to_pos[roach_code][1];
+                        int v = barataid_to_pos[roach_code][2];
+
+                        //store old information
+                        int old_x = x;
+                        int old_y = y;
+                        
+                        //calculate new position
+                        new_position(&x, &y, client.r_direction[b]);
+
+                        if(lizard_matrix[x*WINDOW_SIZE+y]<0){
+                            //no lizards there, roach can move
+
+                            //delete old information about barata position on the 3d matrix
+                            int n = 0;
+                            while(position_to_barata[old_x][old_y][n]!=roach_code){
+                                n++;
+                            }
+                            position_to_barata[old_x][old_y][n] = -1;
+
+                            wmove(my_win, old_x, old_y);
+                            waddch(my_win,' ');
+
+                            //move the roach
+
+                            wmove(my_win, x, y);
+                            waddch(my_win, v+48);
+
+                            //update matrices barataid_to_pos and position_to_barata
+
+                            barataid_to_pos[roach_code][0] = x;
+                            barataid_to_pos[roach_code][1] = y;
+                            
+                            n = 0;
+                            while(position_to_barata[x][y][n]!=-1){
+                                n++;
+                            }
+                            position_to_barata[x][y][n] = roach_code;
+
+                        }  
                     }
-                    position_to_barata[x][y][n] = -1;
-
-                    wmove(my_win, x, y);
-                    waddch(my_win,' ');
-
-                    new_position(&x, &y, client.r_direction[b]);
-
-                    wmove(my_win, x, y);
-                    waddch(my_win, v+48);
-
-                    //update matrices barataid_to_pos and position_to_barata
-
-                    barataid_to_pos[roach_code][0] = x;
-                    barataid_to_pos[roach_code][1] = y;
-                    
-                    n = 0;
-                    while(position_to_barata[x][y][n]!=-1){
-                        n++;
-                    }
-                    position_to_barata[x][y][n] = roach_code;
-                    
                     wrefresh(my_win);
-
                 }
-
                 b++;
             }
 
-        
 
             client_response.code = client.code;
             client_response.status = 1;
@@ -543,7 +611,6 @@ int main()
             screen.msg_type = 2;
             zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
             zmq_send(publisher, &screen, sizeof(screen), 0);*/
-            
         }
 
     }

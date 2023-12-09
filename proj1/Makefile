@@ -1,4 +1,4 @@
-all: display-app.c
+all: server.c
 	gcc -c lizard-client.c
 	gcc -c server.c
 	gcc -c display-app.c
