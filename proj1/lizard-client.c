@@ -47,15 +47,18 @@ int main()
 	keypad(stdscr, TRUE);		/* We get F1, F2 etc..		*/
 	noecho();			/* Don't echo() while we do getch */
 
-    int ch;
+    mvprintw(1, 0, "\rConnected, you can now move using the arrow keys.");
+    mvprintw(2, 0, "\rYour assigned char: %c", client_response.assigned_char);
 
+    int ch;
     bool exit_program = false;
 
     int n = 0;
     do
     {
-    	ch = getch();		
+    	ch = getch();	
         n++;
+        clear();
         switch (ch)
         {
             case KEY_LEFT:
@@ -71,7 +74,7 @@ int main()
                 move.direction = DOWN;
                 break;
             case KEY_UP:
-                mvprintw(0,0,"%d :Up arrow is pressed, char: %c", n, move.ch);
+                mvprintw(0,0,"%d Up arrow is pressed", n);
 
                 move.direction = UP;
                 break;
@@ -105,7 +108,7 @@ int main()
                 return 0;
             }
             else{
-                printf("error, exiting");
+                printf("error while trying to exit");
             }
         }
 
@@ -114,9 +117,23 @@ int main()
         zmq_recv (requester, &client_response, sizeof(client_response), 0);
 
         if(client_response.status == 1)
-            mvprintw(1, 0, "\rServer status: Ok");
-        else
+            mvprintw(1, 0, "\rServer status: OK");
+        if(client_response.status == -1 || client_response.status == -2){
+            endwin();
+            zmq_close (requester);
+            zmq_ctx_destroy (context);
+            if(client_response.status == -1)
+                printf("\rError -1: server full, try again.");
+            if(client_response.status == -2)
+                printf("Error -2: no empty space to deploy lizard, try again.\n");
+            return 0;
+        }
+        if(client_response.status != 1 && client_response.status != -1 && client_response.status != -2)
             mvprintw(1, 0, "\rError, server response: %d", client_response.status);
+
+        mvprintw(2, 0, "\rYour assigned char: %c", client_response.assigned_char);
+        mvprintw(3, 0, "\rYour score: %d", client_response.score);
+        mvprintw(4, 0, "\r");
         
     }while(ch != 27);
     

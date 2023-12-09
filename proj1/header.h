@@ -10,6 +10,8 @@ typedef struct remote_char_t {
 
    char ch;
 
+   int id;
+
    direction_t direction;
 } remote_char_t;
 
@@ -42,5 +44,7 @@ typedef struct response_to_client {
    int code;
 
    int assigned_char;
+
+   int score;
 
 } response_to_client;
