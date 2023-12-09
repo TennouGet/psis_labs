@@ -32,7 +32,7 @@ typedef struct remote_screen {
 
    direction_t old_direction, new_direction;
 
-   int screen_roaches[10][5];
+   int screen_roaches[10][4];
 
 } remote_screen;
 

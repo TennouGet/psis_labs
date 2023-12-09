@@ -618,14 +618,17 @@ int main()
                             screen.screen_roaches[b][0] = x;
                             screen.screen_roaches[b][1] = y;
                             screen.screen_roaches[b][2] = v;
-                            screen.screen_roaches[b][3] = client.code;
-                            screen.screen_roaches[b][4] = b;
+                            screen.screen_roaches[b][3] = roach_code;
 
 
-                        }  
+                        }
+                        else
+                            screen.screen_roaches[b][3] = -1;
                     }
                     wrefresh(my_win);
                 }
+                else
+                    screen.screen_roaches[b][3] = -1;
                 b++;
             }
 

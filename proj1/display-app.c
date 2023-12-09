@@ -11,7 +11,7 @@
 #include <zmq.h>
 #include <assert.h>
 #include <string.h>
-
+#include <math.h>
 
 typedef struct char_n_pos {
 
@@ -100,17 +100,16 @@ int main()
 
     struct char_n_pos characters[10];
     int characters_n = 0;
+    int max_roaches = round((WINDOW_SIZE*WINDOW_SIZE)/3);
 
     // screen matrix 
-    int screen_roaches[10][5];
+    int roaches[max_roaches][3];
 
     int n = 0;
-    while(n!=10){
-        screen_roaches[n][0]=0;
-        screen_roaches[n][1]=0;
-        screen_roaches[n][2]=0;
-        screen_roaches[n][3]=0;
-        screen_roaches[n][4]=0;
+    while(n!=max_roaches){
+        roaches[n][0]=0;
+        roaches[n][1]=0;
+        roaches[n][2]=0;
         n++;
     }
 
@@ -169,7 +168,32 @@ int main()
 
         if(screen.msg_type == 3){
 
-            
+            int old_x = 0;
+            int old_y = 0;
+            int new_x = 0;
+            int new_y = 0;
+            int v = 0;
+            int ID = 0;
+
+            for(i=0; i<10; i++){
+                ID = screen.screen_roaches[i][3];
+                old_x = roaches[ID][0];
+                old_y = roaches[ID][1];
+                new_x = screen.screen_roaches[i][0];
+                new_y = screen.screen_roaches[i][1];
+                v = screen.screen_roaches[i][2];
+
+                if(ID > -1){
+                    if(v != 0){
+                        mvwaddch(my_win, old_x, old_y, ' ');
+                    }
+                    mvwaddch(my_win, new_x, new_y, v + 48);
+                    roaches[ID][0] = new_x;
+                    roaches[ID][1] = new_y;
+                    roaches[ID][2] = v;
+                }
+            }
+
             update_window(my_win, screen, 2);
 
             wrefresh(my_win);
