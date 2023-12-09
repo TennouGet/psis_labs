@@ -12,7 +12,7 @@
 #include <assert.h>
 #include <string.h>
 #include <time.h>
-
+#include <math.h>
 
 typedef struct char_n_pos {
 
@@ -29,10 +29,6 @@ typedef struct char_n_pos {
    direction_t direction;
 
 } char_n_pos;
-
-int collision_calculate_points(int score_a, int score_b){
-    return (score_a + score_b)/2;
-}
 
 direction_t random_direction(){
     return  random()%4;
@@ -75,7 +71,7 @@ void calc_pos(char_n_pos lizards[25], int i, int *lizard_matrix, direction_t dir
 
     int x = lizards[i].x;
     int y = lizards[i].y;
-    int pos = x*WINDOW_SIZE + y;
+    //int pos = x*WINDOW_SIZE + y;
 
     switch (direction)
     {
@@ -109,7 +105,13 @@ void calc_pos(char_n_pos lizards[25], int i, int *lizard_matrix, direction_t dir
 
     if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
             collision = true;
-            lizards[i].score = lizards[lizard_matrix[pos]].score = collision_calculate_points(lizards[i].score, lizards[lizard_matrix[pos]].score);
+
+            int lizard_score = lizards[i].score;
+            int other_lizard_id = lizard_matrix[x*WINDOW_SIZE + y];
+            int other_lizard_score = lizards[other_lizard_id].score; 
+
+            lizards[i].score = round((lizard_score+other_lizard_score)/2);
+            lizards[other_lizard_id].score = lizards[i].score;
     }
 
     if(!collision){
@@ -231,6 +233,12 @@ int main()
         x++;
     }
 
+    n = 0;
+    while(n!=max_roaches){
+        barataid_to_pos[n][3] = 0;
+        r_respawn_list[n]=0;
+        n++;
+    }
 
     // ----------------------------
 
