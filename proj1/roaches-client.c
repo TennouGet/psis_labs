@@ -74,7 +74,7 @@ int main(int argc, char **argv)
     direction_t  direction;
 
     while (1){
-        sleep_delay = random()%700000;
+        sleep_delay = 1000+random()%700000;
         usleep(sleep_delay);
 
         

@@ -210,7 +210,6 @@ int main()
 {	
     //added this
     int id_roach = 0;
-    int id_roach_client = 0;
     int max_roaches = WINDOW_SIZE*WINDOW_SIZE/3;
     int r_space = max_roaches;
 
@@ -221,9 +220,9 @@ int main()
     int time_to_r_id[max_roaches];
 
     // client code | client barata code (0-9) | server barata code (0-(maxroaches-1))
-    int code_to_barataid[max_roaches][3];
+    int code_to_barataid[max_roaches][2];
     // INDEXED BY: server barata code (0-(maxroaches-1)) : pos x | pos y | barata value
-    int barataid_to_pos[max_roaches][3];
+    int barataid_to_pos[max_roaches][4];
     // pos x || pos y || server barata code (0-(maxroaches-1))
     int position_to_barata[WINDOW_SIZE][WINDOW_SIZE][max_roaches];
 
@@ -255,7 +254,6 @@ int main()
 
         code_to_barataid[n][0] = 0;
         code_to_barataid[n][1] = 0;
-        code_to_barataid[n][2] = 0;
 
         n++;
     }
@@ -355,7 +353,7 @@ int main()
             while(position_to_barata[x][y][i]!=-1){
                 i++;
             }
-            position_to_barata[x][y][i] = barataid_to_pos[id][2];
+            position_to_barata[x][y][i] = id;
 
             c_r_index++;
         }
@@ -542,9 +540,8 @@ int main()
 
                 int i = 0;
                 while (i!=n_roaches){
-                    code_to_barataid[id_roach_client+i][0] = code;
-                    code_to_barataid[id_roach_client+i][1] = i;
-                    code_to_barataid[id_roach_client+i][2] = id_roach;
+                    code_to_barataid[id_roach][0] = code;
+                    code_to_barataid[id_roach][1] = i;
                     
                     //roach x pos
                     int x = 1+rand()%(WINDOW_SIZE-3);
@@ -568,7 +565,7 @@ int main()
                     i++;
                 }
 
-                id_roach_client = id_roach_client + 1;
+
 
                 roach_response.status = 1;
                 roach_response.code = code;
@@ -598,7 +595,7 @@ int main()
                         i++;
                     }
 
-                    int roach_code = code_to_barataid[i][2];
+                    int roach_code = i;
 
                     if (barataid_to_pos[roach_code][3]!=1){
                         

@@ -190,7 +190,7 @@ int main()
             wrefresh(my_win);
         }
 
-        if(screen.msg_type == 2){ // process lizard leave // TODO!!!!!
+        if(screen.msg_type == 2){} // process lizard leave // TODO!!!!!
 
         if(screen.msg_type == 3){
 
