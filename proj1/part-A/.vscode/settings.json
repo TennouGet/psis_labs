@@ -1,0 +1,18 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/proj1",
+            "binaryPath": "/home/tennouget/psis_labs/proj1/display-app",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/tennouget/psis_labs/proj1",
+            "binaryPath": "/home/tennouget/psis_labs/proj1/lizard-client",
+            "binaryArgs": []
+        }
+    ],
+    "files.associations": {
+        "cmath": "c",
+        "types.h": "c"
+    }
+}
