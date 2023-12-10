@@ -34,22 +34,22 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
         switch (screen.old_direction)
         {
         case UP:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, screen.old_x+i, screen.old_y, ' ');
             }
             break;
         case DOWN:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, screen.old_x-i, screen.old_y, ' ');
             }
             break;
         case LEFT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, screen.old_x, screen.old_y+i, ' ');
             }
             break;
         case RIGHT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, screen.old_x, screen.old_y-i, ' ');
             }
             break;
@@ -59,28 +59,39 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
         }
     }
 
-    if(mode==1 || mode==2){ //add lizard at new position
+    if(mode==0 || mode==2){ //add lizard at new position
         
         switch (screen.new_direction)
         {
         case UP:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win,screen.new_x+i, screen.new_y, '*');
+                else
                 mvwaddch(my_win, screen.new_x+i, screen.new_y, '.');
             }
             break;
         case DOWN:
-            for(i=0; i < 5; i++){
-                wmove(my_win, screen.new_x-i, screen.new_y);
-                waddch(my_win, '.');
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win, screen.new_x-i, screen.new_y, '*');
+                else
+                mvwaddch(my_win, screen.new_x-i, screen.new_y, '.');
             }
             break;
         case LEFT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win,screen.new_x, screen.new_y+i, '*');
+                else
                 mvwaddch(my_win, screen.new_x, screen.new_y+i, '.');
             }
             break;
         case RIGHT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win, screen.new_x, screen.new_y-i, '*');
+                else
                 mvwaddch(my_win, screen.new_x, screen.new_y-i, '.');
             }
             break;
@@ -91,6 +102,8 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
 
         mvwaddch(my_win, screen.new_x, screen.new_y, screen.ch);
     }
+
+    mvprintw(WINDOW_SIZE + 4 + (screen.ch - 65), 4, "\rLizard %c score: %d.", screen.ch, screen.score);
 
 }
 
@@ -145,8 +158,10 @@ int main()
 
     // creates a window and draws a border 
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+    WINDOW * text_win = newwin(26, 40, WINDOW_SIZE, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
+    wrefresh(text_win);
 
     while (1)
     {
@@ -158,13 +173,24 @@ int main()
 
         int i = 0;
         
-        if(screen.msg_type == 1){
+        if(screen.msg_type == 1){ // process lizard movement
 
-            
-            update_window(my_win, screen, 2);
+            if(screen.score > 49)
+                update_window(my_win, screen, 2);
+            else
+                update_window(my_win, screen, 0);
 
+            box(my_win, 0 , 0);
+            char str[40];
+            snprintf(str, sizeof(str), "\rLizard %c score: %d.", screen.ch, screen.score);
+
+            mvwaddstr(text_win, screen.ch - 65, 0, str);
+            wrefresh(my_win);
+            wrefresh(text_win);
             wrefresh(my_win);
         }
+
+        if(screen.msg_type == 2){ // process lizard leave // TODO!!!!!
 
         if(screen.msg_type == 3){
 
@@ -194,8 +220,9 @@ int main()
                 }
             }
 
-            update_window(my_win, screen, 2);
+            //update_window(my_win, screen, 0);
 
+            box(my_win, 0 , 0);	
             wrefresh(my_win);
         }
 

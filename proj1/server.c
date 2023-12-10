@@ -135,22 +135,22 @@ void update_window(WINDOW * my_win, char_n_pos lizard, int mode){
         switch (lizard.direction)
         {
         case UP:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, lizard.x+i, lizard.y, ' ');
             }
             break;
         case DOWN:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, lizard.x-i, lizard.y, ' ');
             }
             break;
         case LEFT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, lizard.x, lizard.y+i, ' ');
             }
             break;
         case RIGHT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
                 mvwaddch(my_win, lizard.x, lizard.y-i, ' ');
             }
             break;
@@ -160,29 +160,39 @@ void update_window(WINDOW * my_win, char_n_pos lizard, int mode){
         }
     }
 
-    if(mode==1){ //add lizard at new position
+    if(mode == 1 || mode == 2){ //add lizard at new position
         
         switch (lizard.direction)
         {
         case UP:
-            for(i=0; i < 5; i++){
-                mvwaddch(my_win, lizard.x+i, lizard.y, '.');
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win, lizard.x+i, lizard.y, '*');
+                else
+                    mvwaddch(my_win, lizard.x+i, lizard.y, '.');
             }
             break;
         case DOWN:
-            for(i=0; i < 5; i++){
-                //mvwaddch(my_win, lizard.x, lizard.y-i, '.');
-                wmove(my_win, lizard.x-i, lizard.y);
-                waddch(my_win, '.');
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win, lizard.x-i, lizard.y, '*');
+                else
+                mvwaddch(my_win, lizard.x-i, lizard.y, '.');
             }
             break;
         case LEFT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win, lizard.x, lizard.y+i, '*');
+                else
                 mvwaddch(my_win, lizard.x, lizard.y+i, '.');
             }
             break;
         case RIGHT:
-            for(i=0; i < 5; i++){
+            for(i=0; i < 6; i++){
+                if(mode == 2)
+                    mvwaddch(my_win, lizard.x, lizard.y-i, '*');
+                else
                 mvwaddch(my_win, lizard.x, lizard.y-i, '.');
             }
             break;
@@ -306,6 +316,7 @@ int main()
 
     // creates a window and draws a border
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
+    WINDOW * text_win = newwin(26, 40, WINDOW_SIZE, 0);
     box(my_win, 0 , 0);	
 	wrefresh(my_win);
 
@@ -450,9 +461,19 @@ int main()
 
             //----------------------------------------------------------
 
-            update_window(my_win, lizards[i], 1); // draw new lizard
+            if(lizards[i].score > 49)
+                update_window(my_win, lizards[i], 2); // draw new winner lizard
+            else
+                update_window(my_win, lizards[i], 1); // draw new lizard
 
+            box(my_win, 0 , 0);
+
+            char str[40];
+            snprintf(str, sizeof(str), "\rLizard %c score: %d.", lizards[i].ch, lizards[i].score);
+
+            mvwaddstr(text_win, i, 0, str);
             wrefresh(my_win);
+            wrefresh(text_win);
 
             client_response.code = lizards[i].code;
             client_response.assigned_char = lizards[i].ch;
@@ -462,6 +483,7 @@ int main()
             zmq_send (responder, &client_response, sizeof(client_response), 0);
 
             screen.ch = lizards[i].ch;
+            screen.score = lizards[i].score;
             screen.new_x = lizards[i].x;
             screen.new_y = lizards[i].y;
             screen.new_direction = lizards[i].direction;
@@ -482,6 +504,12 @@ int main()
             lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1; //number of lizard occupying space
             wmove(my_win, lizards[i].x, lizards[i].y);
             waddch(my_win,' ');
+            update_window(my_win, lizards[i], 0); // draw new lizard
+            box(my_win, 0 , 0);
+
+            wmove(text_win, lizards[i].ch - 65, 0);
+            wclrtoeol(text_win);
+            wrefresh(text_win);
             wrefresh(my_win);
 
             client_response.code = lizards[i].code;
@@ -625,6 +653,7 @@ int main()
                         else
                             screen.screen_roaches[b][3] = -1;
                     }
+                    box(my_win, 0 , 0);
                     wrefresh(my_win);
                 }
                 else

@@ -30,6 +30,8 @@ typedef struct remote_screen {
 
    int old_x, old_y, new_x, new_y;
 
+   int score;
+
    direction_t old_direction, new_direction;
 
    int screen_roaches[10][4];
