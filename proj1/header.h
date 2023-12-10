@@ -1,8 +1,11 @@
+#define WINDOW_SIZE 15
+#include <stdbool.h>
+
 // declaration the struct corresponding to the exchanged messages
 
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
-typedef struct remote_char_t {
+typedef struct client_message {
 
    int msg_type;
 
@@ -19,8 +22,7 @@ typedef struct remote_char_t {
    direction_t r_direction[10];
 
    int r_bool[10];
-} remote_char_t;
-
+} client_message;
 
 typedef struct remote_screen {
 
@@ -49,3 +51,21 @@ typedef struct response_to_client {
    int score;
 
 } response_to_client;
+
+typedef struct lizards_struct {
+
+   char ch;
+
+   int code;
+
+   int x;
+
+   int y;
+
+   int score;
+
+   bool winner;
+
+   direction_t direction;
+
+} lizards_struct;
