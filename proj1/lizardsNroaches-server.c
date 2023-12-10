@@ -324,7 +324,7 @@ int main()
 
         //check time to see if a roach can respawn
         time(&now);
-        if(now>=r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
+        while(now>=r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
             int id = time_to_r_id[c_r_index];
             barataid_to_pos[id][3]=0;
             //roach x pos
@@ -334,11 +334,16 @@ int main()
             int y = 1+rand()%(WINDOW_SIZE-3);
             barataid_to_pos[id][1] = y;
 
+            int v = barataid_to_pos[id][2];
+
             i=0;
             while(position_to_barata[x][y][i]!=-1){
                 i++;
             }
             position_to_barata[x][y][i] = id;
+
+            wmove(my_win, x, y);
+            waddch(my_win, v+48);
 
             c_r_index++;
         }
