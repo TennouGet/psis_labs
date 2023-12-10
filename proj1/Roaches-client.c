@@ -18,10 +18,37 @@ direction_t random_direction(){
 int main(int argc, char **argv)
 {
 
+    if(argc == 3 && (atoi(argv[2]) < 0 || atoi(argv[2]) > 99999)){
+        printf("Invalid REQ port, try again.\n");
+        return 0;
+    }
+
+    char IP_n_PORT[40] = "";
+
+    if(argc == 1){
+        strcat(IP_n_PORT, "tcp://localhost:5555");
+    }
+    if(argc == 2){
+        strcat(IP_n_PORT, "tcp://");
+        strcat(IP_n_PORT, argv[1]);
+        strcat(IP_n_PORT, ":");
+        strcat(IP_n_PORT, "5555");
+    }
+    if(argc == 3){
+        strcat(IP_n_PORT, "tcp://");
+        strcat(IP_n_PORT, argv[1]);
+        strcat(IP_n_PORT, ":");
+        strcat(IP_n_PORT, argv[2]);
+    }
+    if(argc > 3){
+        printf("Too many arguments, please insert IP and REQ port only.\n");
+        return 0;
+    }
+
     printf ("Connecting to server…");
     void *context = zmq_ctx_new ();
     void *requester = zmq_socket (context, ZMQ_REQ);
-    int code = zmq_connect (requester, "tcp://localhost:5555");
+    int code = zmq_connect (requester, IP_n_PORT);
     printf ("\rConnected to server? %d\n", code);
 
     

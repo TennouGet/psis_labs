@@ -13,11 +13,6 @@
 #include <time.h>
 #include <math.h>
 
-direction_t random_direction(){
-    return  random()%4;
-
-}
-
 void new_position(int* x, int *y, direction_t direction){
     switch (direction)
     {
@@ -189,7 +184,7 @@ void update_window(WINDOW * my_win, lizards_struct lizard, int mode){
 
 }
 
-int main()
+int main(int argc, char* argv[])
 {	
     //added this
     int id_roach = 0;
@@ -261,15 +256,50 @@ int main()
     }
 
     // Socket to talk to clients
+
+    if((argc == 2 || argc == 3)  && (atoi(argv[1]) < 0 || atoi(argv[1]) > 99999)){
+        printf("Invalid REP port, try again.\n");
+        return 0;
+    }
+    if(argc == 3 && (atoi(argv[2]) < 0 || atoi(argv[2]) > 99999)){
+        printf("Invalid PUB port, try again.\n");
+        return 0;
+    }
+
+    char REP_PORT[20] = "";
+    char PUB_PORT[20] = "";
+
+    if(argc == 1){
+        strcat(REP_PORT, "tcp://*:5555");
+        strcat(PUB_PORT, "tcp://*:5557");
+        printf("No input arguments, default ports used (REP:5555/PUB:5557) (arg 1 - REP, arg 2 - PUB).\n");
+    }
+    if(argc == 2){
+        strcat(REP_PORT, "tcp://*:");
+        strcat(REP_PORT, argv[1]);
+        strcat(PUB_PORT, "tcp://*:5557");
+        printf("No input PUB port, default PUB port used (PUB:5557)) (arg 1 - REP, arg 2 - PUB).\n");
+    }
+    if(argc == 3){
+        strcat(REP_PORT, "tcp://*:");
+        strcat(REP_PORT, argv[1]);
+        strcat(PUB_PORT, "tcp://*:");
+        strcat(PUB_PORT, argv[2]);
+    }
+    if(argc > 3){
+        printf("Too many arguments, please insert REP port and PUB port only.\n");
+        return 0;
+    }
+        
     void *context = zmq_ctx_new ();
     void *responder = zmq_socket (context, ZMQ_REP);
-    int rc = zmq_bind (responder, "tcp://*:5555");
+    int rc = zmq_bind (responder, REP_PORT);
     assert (rc == 0);
 
     // Socket to publish to displays
     void *pub_context = zmq_ctx_new ();
     void *publisher = zmq_socket (pub_context, ZMQ_PUB);
-    int rc2 = zmq_bind (publisher, "tcp://*:5557");
+    int rc2 = zmq_bind (publisher, PUB_PORT);
     assert(rc2 == 0);
 
     struct client_message client;
@@ -322,8 +352,15 @@ int main()
         // receive message from client trough socket
         zmq_recv (responder, &client, sizeof(client_message), 0);
 
+        //prepare a roach move message to remote screen (used after roach client disconnects to respawn the roach)
+        i = 0;
+        while(i!=10){
+            screen.screen_roaches[i][3] = -1;
+            i++;
+        }
         //check time to see if a roach can respawn
         time(&now);
+        int update = 0;
         while(now>=r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
             int id = time_to_r_id[c_r_index];
             barataid_to_pos[id][3]=0;
@@ -345,10 +382,28 @@ int main()
             wmove(my_win, x, y);
             waddch(my_win, v+48);
 
+
+            //store information to update screen
+            update = 1;
+
+            int b = code_to_barataid[id][1];
+
+            screen.screen_roaches[b][0] = x;
+            screen.screen_roaches[b][1] = y;
+            screen.screen_roaches[b][2] = v;
+            screen.screen_roaches[b][3] = id;
+
+            
             c_r_index++;
         }
         if(c_r_index==max_roaches){
             c_r_index=0;
+        }
+        if(update==1){
+            //send update to remote screen
+            screen.msg_type = 3;
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            zmq_send(publisher, &screen, sizeof(screen), 0);
         }
 
         // process lizard connection messages

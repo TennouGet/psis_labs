@@ -24,22 +24,34 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
         {
         case UP:
             for(i=0; i < 6; i++){
-                mvwaddch(my_win, screen.old_x+i, screen.old_y, ' ');
+                if(mode==0)
+                    mvwaddch(my_win, screen.new_x+i, screen.new_y, ' ');
+                else
+                    mvwaddch(my_win, screen.old_x+i, screen.old_y, ' ');
             }
             break;
         case DOWN:
             for(i=0; i < 6; i++){
-                mvwaddch(my_win, screen.old_x-i, screen.old_y, ' ');
+                if(mode==0)
+                    mvwaddch(my_win, screen.new_x-i, screen.new_y, ' ');
+                else
+                    mvwaddch(my_win, screen.old_x-i, screen.old_y, ' ');
             }
             break;
         case LEFT:
             for(i=0; i < 6; i++){
-                mvwaddch(my_win, screen.old_x, screen.old_y+i, ' ');
+                if(mode==0)
+                    mvwaddch(my_win, screen.new_x, screen.new_y+i, ' ');
+                else
+                    mvwaddch(my_win, screen.old_x, screen.old_y+i, ' ');
             }
             break;
         case RIGHT:
             for(i=0; i < 6; i++){
-                mvwaddch(my_win, screen.old_x, screen.old_y-i, ' ');
+                if(mode==0)
+                    mvwaddch(my_win, screen.new_x, screen.new_y-i, ' ');
+                else
+                    mvwaddch(my_win, screen.old_x, screen.old_y-i, ' ');
             }
             break;
         default:
@@ -96,9 +108,9 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
 
 }
 
-int main()
+int main(int argc, char* argv[])
 {	
-    printf("hello from remote\n");
+
     int max_roaches = round((WINDOW_SIZE*WINDOW_SIZE)/3);
 
     // screen matrix 
@@ -115,9 +127,37 @@ int main()
     char sub_name[20] = "screen";
 
     // Socket to talk to screns
+
+    if(argc == 3 && (atoi(argv[2]) < 0 || atoi(argv[2]) > 99999)){
+        printf("Invalid PUB port, try again.\n");
+        return 0;
+    }
+
+    char IP_n_PORT[40] = "";
+
+    if(argc == 1){
+        strcat(IP_n_PORT, "tcp://localhost:5557");
+    }
+    if(argc == 2){
+        strcat(IP_n_PORT, "tcp://");
+        strcat(IP_n_PORT, argv[1]);
+        strcat(IP_n_PORT, ":");
+        strcat(IP_n_PORT, "5557");
+    }
+    if(argc == 3){
+        strcat(IP_n_PORT, "tcp://");
+        strcat(IP_n_PORT, argv[1]);
+        strcat(IP_n_PORT, ":");
+        strcat(IP_n_PORT, argv[2]);
+    }
+    if(argc > 3){
+        printf("Too many arguments, please insert IP and PUB port only.\n");
+        return 0;
+    }
+
     void *context = zmq_ctx_new();
     void *subscriber = zmq_socket(context, ZMQ_SUB);
-    zmq_connect(subscriber, "tcp://localhost:5557");
+    zmq_connect(subscriber, IP_n_PORT);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
     printf("Connected to server");
@@ -211,8 +251,6 @@ int main()
                     roaches[ID][2] = v;
                 }
             }
-
-            //update_window(my_win, screen, 0);
 
             box(my_win, 0 , 0);	
             wrefresh(my_win);
