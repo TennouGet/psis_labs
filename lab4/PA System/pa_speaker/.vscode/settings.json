@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/lab4/PA System/pa_speaker",
+            "binaryPath": "/home/tennouget/psis_labs/lab4/PA System/pa_speaker/pa_speaker",
+            "binaryArgs": []
+        }
+    ]
+}

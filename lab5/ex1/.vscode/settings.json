@@ -1,0 +1,14 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/lab5/ex1",
+            "binaryPath": "/home/tennouget/psis_labs/lab5/ex1/server",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/tennouget/psis_labs/lab5/ex1",
+            "binaryPath": "/home/tennouget/psis_labs/lab5/ex1/remote-display-client",
+            "binaryArgs": []
+        }
+    ]
+}

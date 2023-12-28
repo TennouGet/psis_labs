@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/lab4/PA System/server",
+            "binaryPath": "/home/tennouget/psis_labs/lab4/PA System/server/pa_server",
+            "binaryArgs": []
+        }
+    ]
+}

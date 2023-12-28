@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/lab9/lab9-exercise-1/remote-display-client",
+            "binaryPath": "/home/tennouget/psis_labs/lab9/lab9-exercise-1/remote-display-client/remote-display-client",
+            "binaryArgs": []
+        }
+    ]
+}

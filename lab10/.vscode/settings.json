@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/lab10",
+            "binaryPath": "/home/tennouget/psis_labs/lab10/ex4",
+            "binaryArgs": []
+        }
+    ]
+}

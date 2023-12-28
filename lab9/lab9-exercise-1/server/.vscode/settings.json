@@ -1,0 +1,9 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/lab9/lab9-exercise-1/server",
+            "binaryPath": "/home/tennouget/psis_labs/lab9/lab9-exercise-1/server/server",
+            "binaryArgs": []
+        }
+    ]
+}
