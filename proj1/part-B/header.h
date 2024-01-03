@@ -3,6 +3,8 @@
 
 // declaration the struct corresponding to the exchanged messages
 
+/*
+
 typedef enum direction_t {UP, DOWN, LEFT, RIGHT} direction_t;
 
 typedef struct client_message {
@@ -51,6 +53,7 @@ typedef struct response_to_client {
    int score;
 
 } response_to_client;
+*/
 
 typedef struct lizards_struct {
 

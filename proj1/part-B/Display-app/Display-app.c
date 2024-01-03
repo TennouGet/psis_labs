@@ -12,46 +12,48 @@
 #include <string.h>
 #include <math.h>
 
-void update_window(WINDOW * my_win, remote_screen screen, int mode){
+#include "../messages.pb-c.h"
+
+void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
 
     int i = 0;
 
     if(mode==0 || mode==1 || mode==2){ //delete lizard at previous position
 
-        mvwaddch(my_win, screen.old_x, screen.old_y, ' ');
+        mvwaddch(my_win, screen->old_x, screen->old_y, ' ');
 
-        switch (screen.old_direction)
+        switch (screen->old_direction)
         {
-        case UP:
+        case 1:                         // VERIFY IF THIS WORKS!!
             for(i=0; i < 6; i++){
                 if(mode==0)
-                    mvwaddch(my_win, screen.new_x+i, screen.new_y, ' ');
+                    mvwaddch(my_win, screen->new_x+i, screen->new_y, ' ');
                 else
-                    mvwaddch(my_win, screen.old_x+i, screen.old_y, ' ');
+                    mvwaddch(my_win, screen->old_x+i, screen->old_y, ' ');
             }
             break;
-        case DOWN:
+        case 2:
             for(i=0; i < 6; i++){
                 if(mode==0)
-                    mvwaddch(my_win, screen.new_x-i, screen.new_y, ' ');
+                    mvwaddch(my_win, screen->new_x-i, screen->new_y, ' ');
                 else
-                    mvwaddch(my_win, screen.old_x-i, screen.old_y, ' ');
+                    mvwaddch(my_win, screen->old_x-i, screen->old_y, ' ');
             }
             break;
-        case LEFT:
+        case 3:
             for(i=0; i < 6; i++){
                 if(mode==0)
-                    mvwaddch(my_win, screen.new_x, screen.new_y+i, ' ');
+                    mvwaddch(my_win, screen->new_x, screen->new_y+i, ' ');
                 else
-                    mvwaddch(my_win, screen.old_x, screen.old_y+i, ' ');
+                    mvwaddch(my_win, screen->old_x, screen->old_y+i, ' ');
             }
             break;
-        case RIGHT:
+        case 4:
             for(i=0; i < 6; i++){
                 if(mode==0)
-                    mvwaddch(my_win, screen.new_x, screen.new_y-i, ' ');
+                    mvwaddch(my_win, screen->new_x, screen->new_y-i, ' ');
                 else
-                    mvwaddch(my_win, screen.old_x, screen.old_y-i, ' ');
+                    mvwaddch(my_win, screen->old_x, screen->old_y-i, ' ');
             }
             break;
         default:
@@ -62,38 +64,38 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
 
     if(mode==1 || mode==2){ //add lizard at new position
         
-        switch (screen.new_direction)
+        switch (screen->new_direction)
         {
-        case UP:
+        case 1:
             for(i=0; i < 6; i++){
                 if(mode == 2)
-                    mvwaddch(my_win,screen.new_x+i, screen.new_y, '*');
+                    mvwaddch(my_win,screen->new_x+i, screen->new_y, '*');
                 else
-                mvwaddch(my_win, screen.new_x+i, screen.new_y, '.');
+                mvwaddch(my_win, screen->new_x+i, screen->new_y, '.');
             }
             break;
-        case DOWN:
+        case 2:
             for(i=0; i < 6; i++){
                 if(mode == 2)
-                    mvwaddch(my_win, screen.new_x-i, screen.new_y, '*');
+                    mvwaddch(my_win, screen->new_x-i, screen->new_y, '*');
                 else
-                mvwaddch(my_win, screen.new_x-i, screen.new_y, '.');
+                mvwaddch(my_win, screen->new_x-i, screen->new_y, '.');
             }
             break;
-        case LEFT:
+        case 3:
             for(i=0; i < 6; i++){
                 if(mode == 2)
-                    mvwaddch(my_win,screen.new_x, screen.new_y+i, '*');
+                    mvwaddch(my_win,screen->new_x, screen->new_y+i, '*');
                 else
-                mvwaddch(my_win, screen.new_x, screen.new_y+i, '.');
+                mvwaddch(my_win, screen->new_x, screen->new_y+i, '.');
             }
             break;
-        case RIGHT:
+        case 4:
             for(i=0; i < 6; i++){
                 if(mode == 2)
-                    mvwaddch(my_win, screen.new_x, screen.new_y-i, '*');
+                    mvwaddch(my_win, screen->new_x, screen->new_y-i, '*');
                 else
-                mvwaddch(my_win, screen.new_x, screen.new_y-i, '.');
+                mvwaddch(my_win, screen->new_x, screen->new_y-i, '.');
             }
             break;
         default:
@@ -101,10 +103,10 @@ void update_window(WINDOW * my_win, remote_screen screen, int mode){
             break;
         }
 
-        mvwaddch(my_win, screen.new_x, screen.new_y, screen.ch);
+        mvwaddch(my_win, screen->new_x, screen->new_y, screen->ch);
     }
 
-    mvprintw(WINDOW_SIZE + 4 + (screen.ch - 97), 4, "\rLizard %c score: %d.", screen.ch, screen.score);
+    mvprintw(WINDOW_SIZE + 4 + (screen->ch - 97), 4, "\rLizard %s score: %d.", screen->ch, screen->score);
 
 }
 
@@ -160,13 +162,17 @@ int main(int argc, char* argv[])
     zmq_connect(subscriber, IP_n_PORT);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
+    zmq_msg_t zmq_msg;
+    zmq_msg_init(&zmq_msg);
+    int msg_len;
+    void * msg_data;
+    RemoteScreen * screen;
+
     printf("Connected to server");
 
     printf("sub_name: %s", sub_name);
 
     char buffer[20];
-
-    struct remote_screen screen;
 
     zmq_recv (subscriber, buffer, strlen(buffer), 0);
     printf("buffer: %s", buffer);
@@ -190,41 +196,44 @@ int main(int argc, char* argv[])
 
         // receive message from screen trough socket
         zmq_recv (subscriber, &screen, sizeof(screen), 0);
+        msg_len = zmq_recvmsg(subscriber, &zmq_msg, 0);
+        msg_data = zmq_msg_data(&zmq_msg);
+        screen = remote_screen__unpack(NULL, msg_len, msg_data);
         
         // process the movement message
 
         int i = 0;
         
-        if(screen.msg_type == 1){ // process lizard movement
+        if(screen->msg_type == 1){ // process lizard movement
 
-            if(screen.score > 49)
+            if(screen->score > 49)
                 update_window(my_win, screen, 2);
             else
                 update_window(my_win, screen, 1);
 
             box(my_win, 0 , 0);
             char str[40];
-            snprintf(str, sizeof(str), "\rLizard %c score: %d.", screen.ch, screen.score);
+            snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen->ch, screen->score);
 
-            mvwaddstr(text_win, screen.ch - 97, 0, str);
+            mvwaddstr(text_win, screen->ch - 97, 0, str);
             wrefresh(text_win);
             wrefresh(my_win);
         }
 
-        if(screen.msg_type == 2){  // process lizard leave
+        if(screen->msg_type == 2){  // process lizard leave
 
-            wmove(my_win, screen.new_x, screen.new_y);
+            wmove(my_win, screen->new_x, screen->new_y);
             waddch(my_win,' ');
             update_window(my_win, screen, 0); // erase leaving lizard
             box(my_win, 0 , 0);
-            wmove(text_win, screen.ch - 97, 0);
+            wmove(text_win, screen->ch - 97, 0);
             wclrtoeol(text_win);
             wrefresh(text_win);
             wrefresh(my_win);
 
         }
 
-        if(screen.msg_type == 3){
+        if(screen->msg_type == 3){
 
             int old_x = 0;
             int old_y = 0;
@@ -234,12 +243,12 @@ int main(int argc, char* argv[])
             int ID = 0;
 
             for(i=0; i<10; i++){
-                ID = screen.screen_roaches[i][3];
+                ID = screen->screen_roaches[i][3];
                 old_x = roaches[ID][0];
                 old_y = roaches[ID][1];
-                new_x = screen.screen_roaches[i][0];
-                new_y = screen.screen_roaches[i][1];
-                v = screen.screen_roaches[i][2];
+                new_x = screen->screen_roaches[i][0];
+                new_y = screen->screen_roaches[i][1];
+                v = screen->screen_roaches[i][2];
 
                 if(ID > -1){
                     if(v != 0){

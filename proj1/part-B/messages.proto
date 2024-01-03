@@ -12,14 +12,14 @@ message client_lizard_message {
   required int32 msg_type = 1;
   optional int32 code = 2;
   optional string ch = 3;
-  optional direction_t direction;
+  optional direction_t direction = 4;
 }
 
 message client_roaches_message {
   required int32 n_roaches = 1;
-  required repeated int32 r_scores = 2;
-  required repeated direction_t r_direction = 3;
-  required repeated int32 r_bool = 4;
+  repeated int32 r_scores = 2;
+  repeated direction_t r_direction = 3;
+  repeated int32 r_bool = 4;
 }
 
 message remote_screen {
@@ -32,14 +32,14 @@ message remote_screen {
   optional int32 score = 7;
   optional direction_t old_direction = 8;
   optional direction_t new_direction = 9;
-  optional repeated int32 screen_roaches;
+  repeated int32 screen_roaches = 10;
 }
 
 message response_to_client {
 
-  required int32 status;
-  optional int32 code;
-  optional int32 assigned_char;
-  optional int32 score;
+  required int32 status = 1;
+  optional int32 code = 2;
+  optional int32 assigned_char = 3;
+  optional int32 score = 4;
 
 }
