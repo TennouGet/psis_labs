@@ -31,22 +31,57 @@ int id_roach = 0;
 int const max_roaches = WINDOW_SIZE*WINDOW_SIZE/3;
 int r_space = max_roaches;
 
-time_t r_respawn_list[max_roaches];
+
 time_t now;
 int c_a_index = 0;
 int c_r_index = 0;
-int time_to_r_id[max_roaches];
 
+
+//contains a list with timestamps for roaches respawn
+time_t* r_respawn_list;
+//contains a list with the ids of the roaches that respawn
+int* time_to_r_id;
 // client code | client barata code (0-9) | server barata code (0-(maxroaches-1))
-int code_to_barataid[max_roaches][2];
+int* code_to_barataid;
 // INDEXED BY: server barata code (0-(maxroaches-1)) : pos x | pos y | barata value
-int barataid_to_pos[max_roaches][4];
+int* barataid_to_pos;
 // pos x || pos y || server barata code (0-(maxroaches-1))
-int position_to_barata[WINDOW_SIZE][WINDOW_SIZE][max_roaches];
-
+int* position_to_barata;
 
 lizards_struct lizards[25];
 int* lizard_matrix;
+
+int xyz_to_p( int x, int y, int z ) {
+    return (z * WINDOW_SIZE * WINDOW_SIZE) + (y * WINDOW_SIZE) + x;
+}
+
+int xy_to_p(int x, int y, int maxX, int n_col){
+    return (x*n_col+y);
+}
+
+
+matrix_translation p_to_xyz( int idx ) {
+    struct matrix_translation result;
+
+    result.z = idx / (WINDOW_SIZE * WINDOW_SIZE);
+    idx -= (result.z * WINDOW_SIZE * WINDOW_SIZE);
+    result.y = idx / WINDOW_SIZE;
+    result.x = idx % WINDOW_SIZE;
+
+
+    return result;
+}
+
+matrix_translation p_to_xy(int p, int n_col){
+    struct matrix_translation result;
+
+    result.x = (int) (p/n_col);
+    result.y = p - (result.x*n_col);
+    result.z = 0;
+
+    return result;
+
+}
 
 // lizard thread and functions
 
@@ -241,14 +276,14 @@ void *thread_lizards( void *ptr ){
             int q = 0;
             int eaten_barata_id = 0;
             while (q!=max_roaches){
-                if (position_to_barata[lizards[i].x][lizards[i].y][q]!=-1){
+                if (position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)]!=-1){
                     
-                    eaten_barata_id = position_to_barata[lizards[i].x][lizards[i].y][q];
+                    eaten_barata_id = position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)];
 
-                    lizards[i].score = lizards[i].score + barataid_to_pos[eaten_barata_id][2];
+                    lizards[i].score = lizards[i].score + barataid_to_pos[eaten_barata_id*4+2];
 
-                    barataid_to_pos[eaten_barata_id][3] = 1;
-                    position_to_barata[lizards[i].x][lizards[i].y][q]=-1;
+                    barataid_to_pos[eaten_barata_id*4+3] = 1;
+                    position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)]=-1;
 
                     r_respawn_list[c_a_index]= time(&now) + 5;
                     time_to_r_id[c_a_index] = eaten_barata_id;
@@ -620,6 +655,9 @@ int input_treatment(int argc, char *argv[]){
     return 1;
 }
 
+
+
+
 int main(int argc, char* argv[]){
 
     if(input_treatment(argc, argv) == 0){
@@ -651,12 +689,51 @@ int main(int argc, char* argv[]){
 
     lizard_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*sizeof(int));
 
+    r_respawn_list = (time_t *) malloc(max_roaches*sizeof(int));
+
+    time_to_r_id = (int *) malloc(max_roaches*sizeof(int));
+
+    code_to_barataid = (int *) malloc(max_roaches*2*sizeof(int));
+
+    barataid_to_pos = (int *) malloc(max_roaches*4*sizeof(int));
+
+    position_to_barata = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*max_roaches*sizeof(int));
+
+
+
     for(int i=0; i < WINDOW_SIZE*WINDOW_SIZE; i++){
         lizard_matrix[i] = -1;
         if(i<25){
             lizards[i].code = 0;
             lizards[i].winner = false;
         }
+    }
+
+    int n = 0;
+
+    while(n!=WINDOW_SIZE*WINDOW_SIZE*max_roaches){
+
+        position_to_barata[n] = 0;
+
+        n++;
+    }
+
+
+    n = 0;
+    while(n!=max_roaches){
+        r_respawn_list[n] = 0;
+
+        time_to_r_id[n] = 0;
+        
+        code_to_barataid[n*2+0] = 0;
+        code_to_barataid[n*2+1] = 0;
+
+        barataid_to_pos[n*4+0] = 0;
+        barataid_to_pos[n*4+1] = 0;
+        barataid_to_pos[n*4+2] = 0;
+        barataid_to_pos[n*4+3] = 0;
+
+        n++;
     }
 
     // Spawn lizard threads

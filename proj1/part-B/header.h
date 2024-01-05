@@ -72,3 +72,13 @@ typedef struct lizards_struct {
    int direction;
 
 } lizards_struct;
+
+typedef struct matrix_translation {
+
+   int x;
+
+   int y;
+
+   int z;
+
+} matrix_translation;
