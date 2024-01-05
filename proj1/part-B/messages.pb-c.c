@@ -264,11 +264,35 @@ const ProtobufCMessageDescriptor client_lizard_message__descriptor =
   (ProtobufCMessageInit) client_lizard_message__init,
   NULL,NULL,NULL    /* reserved[123] */
 };
-static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[4] =
+static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[6] =
 {
   {
-    "n_roaches",
+    "msg_type",
     1,
+    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_TYPE_INT32,
+    0,   /* quantifier_offset */
+    offsetof(ClientRoachesMessage, msg_type),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "code",
+    2,
+    PROTOBUF_C_LABEL_OPTIONAL,
+    PROTOBUF_C_TYPE_INT32,
+    offsetof(ClientRoachesMessage, has_code),
+    offsetof(ClientRoachesMessage, code),
+    NULL,
+    NULL,
+    0,             /* flags */
+    0,NULL,NULL    /* reserved1,reserved2, etc */
+  },
+  {
+    "n_roaches",
+    3,
     PROTOBUF_C_LABEL_REQUIRED,
     PROTOBUF_C_TYPE_INT32,
     0,   /* quantifier_offset */
@@ -280,7 +304,7 @@ static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[
   },
   {
     "r_scores",
-    2,
+    4,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_INT32,
     offsetof(ClientRoachesMessage, n_r_scores),
@@ -292,7 +316,7 @@ static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[
   },
   {
     "r_direction",
-    3,
+    5,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_ENUM,
     offsetof(ClientRoachesMessage, n_r_direction),
@@ -304,7 +328,7 @@ static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[
   },
   {
     "r_bool",
-    4,
+    6,
     PROTOBUF_C_LABEL_REPEATED,
     PROTOBUF_C_TYPE_INT32,
     offsetof(ClientRoachesMessage, n_r_bool),
@@ -316,15 +340,17 @@ static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[
   },
 };
 static const unsigned client_roaches_message__field_indices_by_name[] = {
-  0,   /* field[0] = n_roaches */
-  3,   /* field[3] = r_bool */
-  2,   /* field[2] = r_direction */
-  1,   /* field[1] = r_scores */
+  1,   /* field[1] = code */
+  0,   /* field[0] = msg_type */
+  2,   /* field[2] = n_roaches */
+  5,   /* field[5] = r_bool */
+  4,   /* field[4] = r_direction */
+  3,   /* field[3] = r_scores */
 };
 static const ProtobufCIntRange client_roaches_message__number_ranges[1 + 1] =
 {
   { 1, 0 },
-  { 0, 4 }
+  { 0, 6 }
 };
 const ProtobufCMessageDescriptor client_roaches_message__descriptor =
 {
@@ -334,7 +360,7 @@ const ProtobufCMessageDescriptor client_roaches_message__descriptor =
   "ClientRoachesMessage",
   "",
   sizeof(ClientRoachesMessage),
-  4,
+  6,
   client_roaches_message__field_descriptors,
   client_roaches_message__field_indices_by_name,
   1,  client_roaches_message__number_ranges,

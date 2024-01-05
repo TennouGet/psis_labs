@@ -9,9 +9,11 @@
 #include <ncurses.h>
 #include <zmq.h>
 #include <time.h>
+#include <pthread.h>
+#include "../messages.pb-c.h"
 
 
-direction_t random_direction(){
+int random_direction(){
     return  random()%4;
 }
 
@@ -50,6 +52,17 @@ int main(int argc, char **argv)
     void *requester = zmq_socket (context, ZMQ_REQ);
     int code = zmq_connect (requester, IP_n_PORT);
     printf ("\rConnected to server? %d\n", code);
+
+
+    zmq_msg_t zmq_msg;
+    zmq_msg_init(&zmq_msg);
+
+    int msg_len;
+    void * msg_data;
+
+
+    ClientRoachesMessage * join;
+    ClientRoachesMessage * move;
 
     
     struct client_message join, move;

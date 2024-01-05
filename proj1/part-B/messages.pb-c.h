@@ -51,6 +51,9 @@ struct  _ClientLizardMessage
 struct  _ClientRoachesMessage
 {
   ProtobufCMessage base;
+  int32_t msg_type;
+  protobuf_c_boolean has_code;
+  int32_t code;
   int32_t n_roaches;
   size_t n_r_scores;
   int32_t *r_scores;
@@ -61,7 +64,7 @@ struct  _ClientRoachesMessage
 };
 #define CLIENT_ROACHES_MESSAGE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&client_roaches_message__descriptor) \
-    , 0, 0,NULL, 0,NULL, 0,NULL }
+    , 0, 0, 0, 0, 0,NULL, 0,NULL, 0,NULL }
 
 
 struct  _RemoteScreen

@@ -16,10 +16,12 @@ message client_lizard_message {
 }
 
 message client_roaches_message {
-  required int32 n_roaches = 1;
-  repeated int32 r_scores = 2;
-  repeated direction_t r_direction = 3;
-  repeated int32 r_bool = 4;
+  required int32 msg_type = 1;
+  optional int32 code = 2;
+  required int32 n_roaches = 3;
+  repeated int32 r_scores = 4;
+  repeated direction_t r_direction = 5;
+  repeated int32 r_bool = 6;
 }
 
 message remote_screen {
