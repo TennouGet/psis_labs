@@ -110,7 +110,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
 
 }
 
-int main(int argc, char* argv[])
+int main(void *ptr, char* IP_n_PORT[])
 {	
 
     int max_roaches = round((WINDOW_SIZE*WINDOW_SIZE)/3);
@@ -129,34 +129,6 @@ int main(int argc, char* argv[])
     char sub_name[20] = "screen";
 
     // Socket to talk to screns
-
-    if(argc == 3 && (atoi(argv[2]) < 0 || atoi(argv[2]) > 99999)){
-        printf("Invalid PUB port, try again.\n");
-        return 0;
-    }
-
-    char IP_n_PORT[40] = "";
-
-    if(argc == 1){
-        strcat(IP_n_PORT, "tcp://localhost:5557");
-    }
-    if(argc == 2){
-        strcat(IP_n_PORT, "tcp://");
-        strcat(IP_n_PORT, argv[1]);
-        strcat(IP_n_PORT, ":");
-        strcat(IP_n_PORT, "5557");
-    }
-    if(argc == 3){
-        strcat(IP_n_PORT, "tcp://");
-        strcat(IP_n_PORT, argv[1]);
-        strcat(IP_n_PORT, ":");
-        strcat(IP_n_PORT, argv[2]);
-    }
-    if(argc > 3){
-        printf("Too many arguments, please insert IP and PUB port only.\n");
-        return 0;
-    }
-
     void *context = zmq_ctx_new();
     void *subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_connect(subscriber, IP_n_PORT);
@@ -220,7 +192,7 @@ int main(int argc, char* argv[])
             wrefresh(my_win);
         }
 
-        if(screen->msg_type == 2){  // process lizard leave
+        if(screen->msg_type == 2){ // process lizard leave
 
             wmove(my_win, screen->new_x, screen->new_y);
             waddch(my_win,' ');
@@ -233,7 +205,7 @@ int main(int argc, char* argv[])
 
         }
 
-        if(screen->msg_type == 3){
+        if(screen->msg_type == 3){ // process roaches movement
 
             int old_x = 0;
             int old_y = 0;
