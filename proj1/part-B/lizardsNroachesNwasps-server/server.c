@@ -445,9 +445,9 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
 
 }
 
-int *thread_display(void *ptr, char PORT[])
+void *thread_display(void *PORT)
 {	
-    char sub_PORT = (char)PORT;
+    char * sub_PORT = (char *) PORT;
 
     int max_roaches = round((WINDOW_SIZE*WINDOW_SIZE)/3);
 
