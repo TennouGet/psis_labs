@@ -50,6 +50,67 @@ int* lizard_matrix;
 
 // lizard thread and functions
 
+void calc_pos(lizards_struct lizards[25], int i, int *lizard_matrix, int direction){
+
+    int n_of_client = lizards[i].ch - 97;
+
+    bool collision = false;
+
+    int x = lizards[i].x;
+    int y = lizards[i].y;
+    //int pos = x*WINDOW_SIZE + y;
+
+    switch (direction)
+    {
+    case 0:
+        (x) --;
+        if(x ==0)
+            x = 2;
+        break;
+
+    case 1:
+        (x) ++;
+        if(x ==WINDOW_SIZE-1)
+            x = WINDOW_SIZE-3;
+        break;
+
+    case 2:
+        (y) --;
+        if(y ==0)
+            y = 2;
+        break;
+
+    case 3:
+        (y) ++;
+        if(y ==WINDOW_SIZE-1)
+            y = WINDOW_SIZE-3;
+        break;
+
+    default:
+        break;
+    }
+
+    if(lizard_matrix[x*WINDOW_SIZE + y] >= 0){
+            collision = true;
+
+            int lizard_score = lizards[i].score;
+            int other_lizard_id = lizard_matrix[x*WINDOW_SIZE + y];
+            int other_lizard_score = lizards[other_lizard_id].score; 
+
+            lizards[i].score = round((lizard_score+other_lizard_score)/2);
+            lizards[other_lizard_id].score = lizards[i].score;
+    }
+
+    if(!collision){
+            lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
+            lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1;
+            lizards[i].x = x;
+            lizards[i].y = y;
+            lizards[i].direction = direction;
+    }
+
+}
+
 ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]){
 
     bool found_empty_spot = false;
@@ -152,9 +213,9 @@ void *thread_lizards( void *ptr ){
 
             client_response = lizard_connect(lizard_matrix, lizards);
 
-            msg_len = response_to_client__get_packed_size(&client_response);
+            msg_len = response_to_client__get_packed_size(client_response);
             char * msg_buf = malloc(msg_len);
-            response_to_client__pack(&client_response, msg_buf);
+            response_to_client__pack(client_response, msg_buf);
             zmq_send (responder, msg_buf, msg_len, 0);
             free(msg_buf);
         }
@@ -171,8 +232,6 @@ void *thread_lizards( void *ptr ){
             screen->old_x = lizards[i].x;
             screen->old_y = lizards[i].y;
             screen->old_direction = lizards[i].direction;
-
-            update_window(my_win, lizards[i], 0); // clean previous lizard
 
             calc_pos(lizards, i, lizard_matrix, client->direction); // calculate new position
 
@@ -207,28 +266,14 @@ void *thread_lizards( void *ptr ){
             if(lizards[i].score > 49)
                 lizards[i].winner = true; // classify as a new winner lizard
 
-            if(lizards[i].winner == true)
-                update_window(my_win, lizards[i], 2); // draw new winner lizard
-            else
-                update_window(my_win, lizards[i], 1); // draw new lizard
-
-            box(my_win, 0 , 0);
-
-            char str[40];
-            snprintf(str, sizeof(str), "\rLizard %c score: %d.", lizards[i].ch, lizards[i].score);
-
-            mvwaddstr(text_win, i, 0, str);
-            wrefresh(my_win);
-            wrefresh(text_win);
-
             client_response->code = lizards[i].code;
             client_response->assigned_char = lizards[i].ch;
             client_response->status = 1;
             client_response->score = lizards[i].score;
 
-            msg_len = response_to_client__get_packed_size(&client_response);
-            char * msg_buf = malloc(msg_len);
-            response_to_client__pack(&client_response, msg_buf);
+            msg_len = response_to_client__get_packed_size(client_response);
+            msg_buf = malloc(msg_len);
+            response_to_client__pack(client_response, msg_buf);
             zmq_send (responder, msg_buf, msg_len, 0);
             free(msg_buf);
 
@@ -241,9 +286,9 @@ void *thread_lizards( void *ptr ){
 
 
             zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-            msg_len = remote_screen__get_packed_size(&screen);
-            char * msg_buf = malloc(msg_len);
-            remote_screen__pack(&screen, msg_buf);
+            msg_len = remote_screen__get_packed_size(screen);
+            msg_buf = malloc(msg_len);
+            remote_screen__pack(screen, msg_buf);
             zmq_send (responder, msg_buf, msg_len, 0);
             free(msg_buf);
         }
@@ -258,15 +303,6 @@ void *thread_lizards( void *ptr ){
                 }
 
                 lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1; //number of lizard occupying space
-                wmove(my_win, lizards[i].x, lizards[i].y);
-                waddch(my_win,' ');
-                update_window(my_win, lizards[i], 0); // erase leaving lizard
-                box(my_win, 0 , 0);
-
-                wmove(text_win, lizards[i].ch - 97, 0);
-                wclrtoeol(text_win);
-                wrefresh(text_win);
-                wrefresh(my_win);
 
                 client_response->code = lizards[i].code;
                 client_response->assigned_char = lizards[i].ch;
@@ -281,16 +317,16 @@ void *thread_lizards( void *ptr ){
                 screen->msg_type = 2;
 
                 zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-                msg_len = remote_screen__get_packed_size(&screen);
-                char * msg_buf = malloc(msg_len);
-                remote_screen__pack(&screen, msg_buf);
+                msg_len = remote_screen__get_packed_size(screen);
+                msg_buf = malloc(msg_len);
+                remote_screen__pack(screen, msg_buf);
                 zmq_send (responder, msg_buf, msg_len, 0);
                 free(msg_buf);
 
 
-                msg_len = response_to_client__get_packed_size(&client_response);
-                char * msg_buf = malloc(msg_len);
-                response_to_client__pack(&client_response, msg_buf);
+                msg_len = response_to_client__get_packed_size(client_response);
+                msg_buf = malloc(msg_len);
+                response_to_client__pack(client_response, msg_buf);
                 zmq_send (responder, msg_buf, msg_len, 0);
                 free(msg_buf);
 
@@ -402,15 +438,16 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
             break;
         }
 
-        mvwaddch(my_win, screen->new_x, screen->new_y, screen->ch);
+        mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
     }
 
-    mvprintw(WINDOW_SIZE + 4 + (screen->ch - 97), 4, "\rLizard %s score: %d.", screen->ch, screen->score);
+    mvprintw(WINDOW_SIZE + 4 + (*screen->ch - 97), 4, "\rLizard %c score: %d.", *screen->ch, screen->score);
 
 }
 
-int *thread_display(void *ptr, char* IP_n_PORT[])
+int *thread_display(void *ptr, char PORT[])
 {	
+    char sub_PORT = (char)PORT;
 
     int max_roaches = round((WINDOW_SIZE*WINDOW_SIZE)/3);
 
@@ -427,10 +464,14 @@ int *thread_display(void *ptr, char* IP_n_PORT[])
 
     char sub_name[20] = "screen";
 
+    char IP_nPORT[40] = "tcp://localhost:";
+
+    strcat(IP_nPORT, sub_PORT);
+
     // Socket to talk to screns
     void *context = zmq_ctx_new();
     void *subscriber = zmq_socket(context, ZMQ_SUB);
-    zmq_connect(subscriber, IP_n_PORT);
+    zmq_connect(subscriber, IP_nPORT);
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
     zmq_msg_t zmq_msg;
@@ -486,7 +527,7 @@ int *thread_display(void *ptr, char* IP_n_PORT[])
             char str[40];
             snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen->ch, screen->score);
 
-            mvwaddstr(text_win, screen->ch - 97, 0, str);
+            mvwaddstr(text_win, *screen->ch - 97, 0, str);
             wrefresh(text_win);
             wrefresh(my_win);
         }
@@ -497,7 +538,7 @@ int *thread_display(void *ptr, char* IP_n_PORT[])
             waddch(my_win,' ');
             update_window(my_win, screen, 0); // erase leaving lizard
             box(my_win, 0 , 0);
-            wmove(text_win, screen->ch - 97, 0);
+            wmove(text_win, *screen->ch - 97, 0);
             wclrtoeol(text_win);
             wrefresh(text_win);
             wrefresh(my_win);
@@ -514,12 +555,12 @@ int *thread_display(void *ptr, char* IP_n_PORT[])
             int ID = 0;
 
             for(i=0; i<10; i++){
-                ID = screen->screen_roaches[i][3];
+                ID = screen->screen_roaches[i*10 + 3];
                 old_x = roaches[ID][0];
                 old_y = roaches[ID][1];
-                new_x = screen->screen_roaches[i][0];
-                new_y = screen->screen_roaches[i][1];
-                v = screen->screen_roaches[i][2];
+                new_x = screen->screen_roaches[i*10 + 0];
+                new_y = screen->screen_roaches[i*10 + 1];
+                v = screen->screen_roaches[i*10 + 2];
 
                 if(ID > -1){
                     if(v != 0){
@@ -627,7 +668,7 @@ int main(int argc, char* argv[]){
 
     // Spawn display thread
     pthread_t display;
-    pthread_create( &display, NULL, thread_display, (void *) IP_nPORT); // ADD IP_nPORT
+    pthread_create( &display, NULL, thread_display, (void *) PUB_PORT); // ADD IP_nPORT
 
     //  Start the proxy
     zmq_proxy (frontend, backend, NULL);

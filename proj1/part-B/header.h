@@ -69,6 +69,6 @@ typedef struct lizards_struct {
 
    bool winner;
 
-   direction_t direction;
+   int direction;
 
 } lizards_struct;
