@@ -133,6 +133,7 @@ void *thread_lizards( void *ptr ){
 
     int msg_len;
     void * msg_data;
+    char * msg_buf;
     ClientLizardMessage * client;
     ResponseToClient * client_response;
     RemoteScreen * screen;
@@ -150,7 +151,12 @@ void *thread_lizards( void *ptr ){
         if(client->msg_type == 0){
 
             client_response = lizard_connect(lizard_matrix, lizards);
-            zmq_send (responder, &client_response, sizeof(client_response), 0);
+
+            msg_len = response_to_client__get_packed_size(&client_response);
+            char * msg_buf = malloc(msg_len);
+            response_to_client__pack(&client_response, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
         }
         
         // process lizard movement message
@@ -220,7 +226,11 @@ void *thread_lizards( void *ptr ){
             client_response->status = 1;
             client_response->score = lizards[i].score;
 
-            zmq_send (responder, &client_response, sizeof(client_response), 0);
+            msg_len = response_to_client__get_packed_size(&client_response);
+            char * msg_buf = malloc(msg_len);
+            response_to_client__pack(&client_response, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
 
             *screen->ch = lizards[i].ch;
             screen->score = lizards[i].score;
@@ -228,8 +238,14 @@ void *thread_lizards( void *ptr ){
             screen->new_y = lizards[i].y;
             screen->new_direction = lizards[i].direction;
             screen->msg_type = 1;
+
+
             zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-            zmq_send(publisher, &screen, sizeof(screen), 0);
+            msg_len = remote_screen__get_packed_size(&screen);
+            char * msg_buf = malloc(msg_len);
+            remote_screen__pack(&screen, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
         }
 
         // process lizard leave message
@@ -263,10 +279,20 @@ void *thread_lizards( void *ptr ){
                 screen->new_direction = lizards[i].direction;
                 screen->old_direction = lizards[i].direction;
                 screen->msg_type = 2;
-                zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-                zmq_send(publisher, &screen, sizeof(screen), 0);
 
-                zmq_send (responder, &client_response, sizeof(client_response), 0);
+                zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+                msg_len = remote_screen__get_packed_size(&screen);
+                char * msg_buf = malloc(msg_len);
+                remote_screen__pack(&screen, msg_buf);
+                zmq_send (responder, msg_buf, msg_len, 0);
+                free(msg_buf);
+
+
+                msg_len = response_to_client__get_packed_size(&client_response);
+                char * msg_buf = malloc(msg_len);
+                response_to_client__pack(&client_response, msg_buf);
+                zmq_send (responder, msg_buf, msg_len, 0);
+                free(msg_buf);
 
                 client_response->code = 0;
                 client_response->assigned_char = 0;
@@ -440,7 +466,7 @@ int *thread_display(void *ptr, char* IP_n_PORT[])
     {
 
         // receive message from screen trough socket
-        zmq_recv (subscriber, &screen, sizeof(screen), 0);
+        //zmq_recv (subscriber, &screen, sizeof(screen), 0);
         msg_len = zmq_recvmsg(subscriber, &zmq_msg, 0);
         msg_data = zmq_msg_data(&zmq_msg);
         screen = remote_screen__unpack(NULL, msg_len, msg_data);
