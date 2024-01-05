@@ -192,7 +192,7 @@ ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]
                     break;
                 }
                 j++;
-            }
+            } 
             break;
         }
     }
@@ -232,7 +232,7 @@ void *thread_lizards( void *ptr ){
     char * msg_buf;
     ClientLizardMessage * client;
     ResponseToClient * client_response;
-    RemoteScreen * screen;
+    RemoteScreen screen = REMOTE_SCREEN__INIT;
 
     while (1){
 
@@ -259,7 +259,7 @@ void *thread_lizards( void *ptr ){
         if(client->msg_type == 1){
 
             for(i=0; i < 25; i++){
-                if(lizards[i].ch == *client->ch && lizards[i].code == client->code){
+                if(lizards[i].ch == client->ch && lizards[i].code == client->code){
                     break;
                 }
             }

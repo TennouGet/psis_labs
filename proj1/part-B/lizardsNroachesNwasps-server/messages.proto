@@ -1,0 +1,47 @@
+syntax = "proto2";
+
+
+enum direction_t {
+  UP = 0;
+  DOWN = 1;
+  LEFT = 2;
+  RIGHT = 3;
+}
+
+message client_lizard_message {
+  required int32 msg_type = 1;
+  optional int32 code = 2;
+  optional string ch = 3;
+  optional direction_t direction = 4;
+}
+
+message client_roaches_message {
+  required int32 msg_type = 1;
+  optional int32 code = 2;
+  required int32 n_roaches = 3;
+  repeated int32 r_scores = 4;
+  repeated direction_t r_direction = 5;
+  repeated int32 r_bool = 6;
+}
+
+message remote_screen {
+  required int32 msg_type = 1;
+  optional string ch = 2;
+  optional int32 old_x = 3;
+  optional int32 old_y = 4;
+  optional int32 new_x = 5;
+  optional int32 new_y = 6;
+  optional int32 score = 7;
+  optional direction_t old_direction = 8;
+  optional direction_t new_direction = 9;
+  repeated int32 screen_roaches = 10;
+}
+
+message response_to_client {
+
+  required int32 status = 1;
+  optional int32 code = 2;
+  optional int32 assigned_char = 3;
+  optional int32 score = 4;
+
+}
