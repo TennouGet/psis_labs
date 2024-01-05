@@ -1,0 +1,14 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/pedro/psis/psis_labs/proj1",
+            "binaryPath": "/home/pedro/psis/psis_labs/proj1/roaches-client",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/pedro/psis/psis_labs/proj1",
+            "binaryPath": "/home/pedro/psis/psis_labs/proj1/server",
+            "binaryArgs": []
+        }
+    ]
+}

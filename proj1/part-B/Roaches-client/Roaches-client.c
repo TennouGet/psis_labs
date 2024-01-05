@@ -64,12 +64,14 @@ int main(int argc, char **argv)
     ClientRoachesMessage * join;
     ClientRoachesMessage * move;
 
-    
-    struct client_message join, move;
-    struct response_to_client roach_response;
+    ResponseToClient * roach_response;
 
-    join.msg_type = 3;
-    join.code = 0;
+    
+    //struct client_message join, move;
+    //struct response_to_client roach_response;
+
+    join->msg_type = 3;
+    join->code = 0;
 
     time_t t;
     srand((unsigned) time(&t));
@@ -79,19 +81,26 @@ int main(int argc, char **argv)
 
     int i = 0;
     while (i!=n_roaches){
-        join.r_scores[i] = rand()%4 + 1;
-        printf("score %d\n",join.r_scores[i]);
+        join->r_scores[i] = rand()%4 + 1;
+        printf("score %d\n",join->r_scores[i]);
         i++;
     }
 
     
-    join.n_roaches = n_roaches;
+    join->n_roaches = n_roaches;
     
 
     // send connection message
+
+
     zmq_send (requester, &join, sizeof(join), 0);
-    zmq_recv (requester, &roach_response, sizeof(roach_response), 0);
-    if(roach_response.status == 1){
+
+    msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+    msg_data = zmq_msg_data(&zmq_msg);
+
+    roach_response = client_roaches_message__unpack(NULL, msg_len, msg_data);    
+
+    if(roach_response->status == 1){
         printf("Server response OK, roaches created.\n");
     }
     else{
@@ -103,11 +112,11 @@ int main(int argc, char **argv)
     
     printf("roaches: %d\n", n_roaches);
 
-    move.msg_type = 4;
-    move.code = roach_response.code;
+    move->msg_type = 4;
+    move->code = roach_response->code;
 
     int sleep_delay;
-    direction_t  direction;
+    int  direction;
 
     while (1){
         sleep_delay = 1000+random()%700000;
@@ -116,7 +125,7 @@ int main(int argc, char **argv)
         
         int i = 0;
         while(i!=10){
-            move.r_bool[i] = 0;
+            move->r_bool[i] = 0;
             i++;
         }
         i = 0;
@@ -125,26 +134,13 @@ int main(int argc, char **argv)
                 /* calculates new direction */
                 direction = random_direction();
                 printf("%d\n",direction);
-                switch (direction)
-                {
-                case LEFT:
-                    move.r_direction[i] = LEFT;
-                    break;
-                case RIGHT:
-                    move.r_direction[i] = RIGHT;
-                    break;
-                case DOWN:
-                    move.r_direction[i] = DOWN;
-                    break;
-                case UP:
-                    move.r_direction[i] = UP;
-                    break;
-                }
-                move.r_bool[i] = 1;
-                printf("roach %d moved %d\n",i,move.r_direction[i]);
+
+                move->r_direction[i] = direction;
+                move->r_bool[i] = 1;
+                printf("roach %d moved %d\n",i,move->r_direction[i]);
             }
             else{
-                move.r_bool[i] = 0;
+                move->r_bool[i] = 0;
             }
             
             i++;
@@ -162,15 +158,17 @@ int main(int argc, char **argv)
         //printf("%d chosen roach\n",move.id);
 
         
-
-
-        
         zmq_send (requester, &move, sizeof(move), 0);
-        zmq_recv (requester, &roach_response, sizeof(roach_response), 0);
-        if(roach_response.status == 1)
-            mvprintw(1, 0, "\rreceived: %d", roach_response.status);
+
+        msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+        msg_data = zmq_msg_data(&zmq_msg);
+
+        roach_response = client_roaches_message__unpack(NULL, msg_len, msg_data);  
+
+        if(roach_response->status == 1)
+            mvprintw(1, 0, "\rreceived: %d", roach_response->status);
         else
-            mvprintw(1, 0, "\rError, server response: %d", roach_response.status);
+            mvprintw(1, 0, "\rError, server response: %d", roach_response->status);
 
     }
 
