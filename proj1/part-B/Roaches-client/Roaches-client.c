@@ -89,16 +89,19 @@ int main(int argc, char **argv)
     
     join->n_roaches = n_roaches;
     
+    char * msg_buf;
 
     // send connection message
+    msg_len = client_roaches_message__get_packed_size(join);
+    msg_buf = malloc(msg_len);
+    client_roaches_message__pack(join, msg_buf);
+    zmq_send (requester, msg_buf, msg_len, 0);
+    free(msg_buf);
 
-
-    zmq_send (requester, &join, sizeof(join), 0);
-
+    // receive server response
     msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
     msg_data = zmq_msg_data(&zmq_msg);
-
-    roach_response = client_roaches_message__unpack(NULL, msg_len, msg_data);    
+    roach_response = response_to_client__unpack(NULL, msg_len, msg_data);    
 
     if(roach_response->status == 1){
         printf("Server response OK, roaches created.\n");
@@ -157,13 +160,18 @@ int main(int argc, char **argv)
         
         //printf("%d chosen roach\n",move.id);
 
-        
-        zmq_send (requester, &move, sizeof(move), 0);
 
+        msg_len = client_roaches_message__get_packed_size(move);
+        msg_buf = malloc(msg_len);
+        client_roaches_message__pack(move, msg_buf);
+        zmq_send (requester, msg_buf, msg_len, 0);
+        free(msg_buf);
+
+
+        //receive server response
         msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
         msg_data = zmq_msg_data(&zmq_msg);
-
-        roach_response = client_roaches_message__unpack(NULL, msg_len, msg_data);  
+        roach_response = response_to_client__unpack(NULL, msg_len, msg_data);  
 
         if(roach_response->status == 1)
             mvprintw(1, 0, "\rreceived: %d", roach_response->status);
