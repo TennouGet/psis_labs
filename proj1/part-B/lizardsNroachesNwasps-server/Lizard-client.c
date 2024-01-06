@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    move->ch = client_response->assigned_char;
+    *move->ch = (char) client_response->assigned_char;
     move->msg_type = 1;
     move->code = client_response->code;
 
