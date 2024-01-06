@@ -6,3 +6,6 @@ lizards: Lizard-client.c messages.pb-c.h
 
 proto: messages.proto
 	protoc --c_out=. messages.proto
+
+roaches: Roaches-client.c
+	gcc -g Roaches-client.c messages.pb-c.c header.h -lzmq -lprotobuf-c -lncurses -o Roaches-client

@@ -1,4 +1,4 @@
-#include "../header.h"
+#include "header.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,7 +10,7 @@
 #include <zmq.h>
 #include <time.h>
 #include <pthread.h>
-#include "../messages.pb-c.h"
+#include "messages.pb-c.h"
 
 
 int random_direction(){
@@ -28,13 +28,13 @@ int main(int argc, char **argv)
     char IP_n_PORT[40] = "";
 
     if(argc == 1){
-        strcat(IP_n_PORT, "tcp://localhost:5555");
+        strcat(IP_n_PORT, "tcp://localhost:5556");
     }
     if(argc == 2){
         strcat(IP_n_PORT, "tcp://");
         strcat(IP_n_PORT, argv[1]);
         strcat(IP_n_PORT, ":");
-        strcat(IP_n_PORT, "5555");
+        strcat(IP_n_PORT, "5556");
     }
     if(argc == 3){
         strcat(IP_n_PORT, "tcp://");
@@ -67,20 +67,12 @@ int main(int argc, char **argv)
     ResponseToClient * roach_response;
     
     join.has_msg_type = 1;
-    join.msg_type = 0;
-
+    join.has_n_roaches = 1;
     join.has_code = 1;
-    join.code = 54;
-
-    join.ch = 0;
-
-    join.has_direction = 1;
-    join.direction = 1;
-
 
     move.has_msg_type = 1;
+    move.has_n_roaches = 1;
     move.has_code = 1;
-    move.has_direction = 1;
 
     
     //struct client_message join, move;
@@ -95,12 +87,15 @@ int main(int argc, char **argv)
     int n_roaches = 1 + rand()%9;
     //n_roaches=10;
 
+    join.r_scores = malloc(sizeof(int)*10);;
+
     int i = 0;
     while (i!=n_roaches){
         join.r_scores[i] = rand()%4 + 1;
         printf("score %d\n",join.r_scores[i]);
         i++;
     }
+    join.n_r_scores = n_roaches;
 
     
     join.n_roaches = n_roaches;
@@ -136,6 +131,12 @@ int main(int argc, char **argv)
 
     int sleep_delay;
     int  direction;
+
+    move.r_bool = malloc(sizeof(int)*10);;
+    move.n_r_bool = 10;
+
+    move.r_direction = malloc(sizeof(int)*10);
+    move.n_r_direction = n_roaches;
 
     while (1){
         sleep_delay = 1000+random()%700000;

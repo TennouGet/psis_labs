@@ -9,6 +9,16 @@
             "cwd": "/home/tennouget/psis_labs/proj1/part-B/lizardsNroachesNwasps-server",
             "binaryPath": "/home/tennouget/psis_labs/proj1/part-B/lizardsNroachesNwasps-server/Lizard-client1",
             "binaryArgs": []
+        },
+        {
+            "cwd": "/home/pedro/psis/psis_labs/proj1/part-B/lizardsNroachesNwasps-server",
+            "binaryPath": "/home/pedro/psis/psis_labs/proj1/part-B/lizardsNroachesNwasps-server/Roaches-client",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/pedro/psis/psis_labs/proj1/part-B/lizardsNroachesNwasps-server",
+            "binaryPath": "/home/pedro/psis/psis_labs/proj1/part-B/lizardsNroachesNwasps-server/server",
+            "binaryArgs": []
         }
     ],
     "files.associations": {

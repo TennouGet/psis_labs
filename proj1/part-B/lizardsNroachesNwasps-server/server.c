@@ -22,6 +22,8 @@ pthread_mutex_t mux_next_random; // UNDERSTAND THIS
 // GLOBAL VARIABLES
 
 void *context;
+void *bugs_context;
+void *responder;
 void *publisher;
 char buffer[20] = "screen";
 
@@ -86,6 +88,34 @@ matrix_translation p_to_xy(int p, int n_col){
 }
 
 // lizard thread and functions
+
+void new_position(int* x, int *y, int direction){
+    switch (direction)
+    {
+    case 0:
+        (*x) --;
+        if(*x ==0)
+            *x = 2;
+        break;
+    case 1:
+        (*x) ++;
+        if(*x ==WINDOW_SIZE-1)
+            *x = WINDOW_SIZE-3;
+        break;
+    case 2:
+        (*y) --;
+        if(*y ==0)
+            *y = 2;
+        break;
+    case 3:
+        (*y) ++;
+        if(*y ==WINDOW_SIZE-1)
+            *y = WINDOW_SIZE-3;
+        break;
+    default:
+        break;
+    }
+}
 
 void calc_pos(int i, int *lizard_matrix, int direction){
 
@@ -412,6 +442,202 @@ void *thread_lizards( void *ptr ){
 
 }
 
+void *thread_bugs( void *ptr ){
+
+    long int thread_number = (long int)ptr;
+
+    zmq_msg_t zmq_msg;
+    zmq_msg_init(&zmq_msg);
+
+    int i=0;
+
+    int msg_len;
+    void * msg_data;
+    char * msg_buf;
+    ClientRoachesMessage * client;
+    ResponseToClient roach_response = RESPONSE_TO_CLIENT__INIT; ;
+
+    RemoteScreen screen = REMOTE_SCREEN__INIT;
+
+
+    roach_response.has_status = 1;
+    roach_response.has_code = 1;
+    roach_response.has_score = 0;
+
+    screen.has_msg_type = 1;
+    screen.has_old_x = 0;
+    screen.has_old_y = 0;
+    screen.has_new_x = 0;
+    screen.has_new_y = 0;
+    screen.has_score = 0;
+    screen.has_old_direction = 0;
+    screen.has_new_direction = 0;
+
+    screen.screen_roaches = malloc(sizeof(int)*40);;
+    screen.n_screen_roaches = 40;
+
+    while(1){
+
+        msg_len = zmq_recvmsg(responder, &zmq_msg, 0); 
+        msg_data = zmq_msg_data(&zmq_msg);
+        client = client_roaches_message__unpack(NULL, msg_len, msg_data); 
+
+        // process roach connection message
+        if(client->msg_type == 3){
+
+
+            int n_roaches = client->n_roaches;
+
+            if(r_space-n_roaches>=0){
+                //accept connection
+                r_space = r_space-n_roaches;
+
+                int code = rand();
+
+                int i = 0;
+                while (i!=n_roaches){
+                    code_to_barataid[id_roach*2+0] = code;
+                    code_to_barataid[id_roach*2+1] = i;
+                    
+                    //roach x pos
+                    int x = 1+rand()%(WINDOW_SIZE-3);
+                    barataid_to_pos[id_roach*4+0] = x;
+                    //roach y pos
+                    int y = 1+rand()%(WINDOW_SIZE-3);
+                    barataid_to_pos[id_roach*4+1] = y;
+                    //roach value
+                    barataid_to_pos[id_roach*4+2] = client->r_scores[i];
+
+
+                    //storing the roach in a 3 dimensional matrix that represents the map and the high represents the amount of roaches on the spot
+                    int n = 0;
+                    while(position_to_barata[xyz_to_p(x,y,n)]!=-1){
+                        n++;
+                    }
+                    position_to_barata[xyz_to_p(x,y,n)] = id_roach;
+
+
+                    id_roach++;
+                    i++;
+                }
+
+
+
+                roach_response.status = 1;
+                roach_response.code = code;
+            }
+            else{
+                //reject
+                roach_response.status = 0;
+            }
+            
+
+            msg_len = response_to_client__get_packed_size(&roach_response);
+            msg_buf = malloc(msg_len);
+            response_to_client__pack(&roach_response, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
+        }
+
+        // process roach movement message
+        if(client->msg_type == 4){
+
+            int i = 0;
+            while(code_to_barataid[i*2+0]!= client->code){
+                i++;
+            }
+
+
+            int b = 0;
+            while (b!=10){
+                if (client->r_bool[b]==1){
+                    
+                    while (code_to_barataid[i*2+1]!= b){
+                        i++;
+                    }
+
+                    int roach_code = i;
+
+                    if (barataid_to_pos[roach_code*4+3]!=1){
+                        
+                        
+                        int x = barataid_to_pos[roach_code*4+0];
+                        int y = barataid_to_pos[roach_code*4+1];
+                        int v = barataid_to_pos[roach_code*4+2];
+
+                        //store old information
+                        int old_x = x;
+                        int old_y = y;
+                        
+                        //calculate new position
+                        new_position(&x, &y, client->r_direction[b]);
+
+                        if(lizard_matrix[x*WINDOW_SIZE+y]<0){
+                            //no lizards there, roach can move
+
+                            //delete old information about barata position on the 3d matrix
+                            int n = 0;
+                            while(position_to_barata[xyz_to_p(old_x,old_y,n)]!=roach_code){
+                                n++;
+                            }
+                            position_to_barata[xyz_to_p(old_x,old_y,n)] = -1;
+
+                            
+
+                            //update matrices barataid_to_pos and position_to_barata
+
+                            barataid_to_pos[roach_code*4+0] = x;
+                            barataid_to_pos[roach_code*4+1] = y;
+                            
+                            n = 0;
+                            while(position_to_barata[xyz_to_p(x,y,n)]!=-1){
+                                n++;
+                            }
+                            position_to_barata[xyz_to_p(x,y,n)] = roach_code;
+
+                            screen.screen_roaches[b*4+0] = x;
+                            screen.screen_roaches[b*4+1] = y;
+                            screen.screen_roaches[b*4+2] = v;
+                            screen.screen_roaches[b*4+3] = roach_code;
+
+
+                        }
+                        else
+                            screen.screen_roaches[b*4+3] = -1;
+                    }
+                }
+                else
+                    screen.screen_roaches[b*4+3] = -1;
+                b++;
+            }
+
+
+            roach_response.code = client->code;
+            roach_response.status = 1;
+        
+
+            msg_len = response_to_client__get_packed_size(&roach_response);
+            msg_buf = malloc(msg_len);
+            response_to_client__pack(&roach_response, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
+
+
+            
+            screen.msg_type = 3;
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            msg_len = remote_screen__get_packed_size(&screen);
+            msg_buf = malloc(msg_len);
+            remote_screen__pack(&screen, msg_buf);
+            zmq_send (publisher, msg_buf, msg_len, 0);
+
+        }
+
+    }
+
+}
+
+
 // display thread and functions
 
 void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
@@ -621,12 +847,12 @@ void *thread_display(void *PORT)
             int ID = 0;
 
             for(i=0; i<10; i++){
-                ID = screen2->screen_roaches[i*10 + 3];
+                ID = screen2->screen_roaches[i*4 + 3];
                 old_x = roaches[ID][0];
                 old_y = roaches[ID][1];
-                new_x = screen2->screen_roaches[i*10 + 0];
-                new_y = screen2->screen_roaches[i*10 + 1];
-                v = screen2->screen_roaches[i*10 + 2];
+                new_x = screen2->screen_roaches[i*4 + 0];
+                new_y = screen2->screen_roaches[i*4 + 1];
+                v = screen2->screen_roaches[i*4 + 2];
 
                 if(ID > -1){
                     if(v != 0){
@@ -710,11 +936,18 @@ int main(int argc, char* argv[]){
     rc = zmq_bind (backend, "inproc://back-end");
     assert (rc == 0);
 
+
     // Socket to publish to displays
     void *pub_context = zmq_ctx_new();
     publisher = zmq_socket(pub_context, ZMQ_PUB);
     int rc2 = zmq_bind(publisher, PUB_PORT);
     assert(rc2 == 0);
+
+
+    bugs_context = zmq_ctx_new();
+    responder = zmq_socket(bugs_context, ZMQ_REP);
+    int rc3 = zmq_bind(responder, "tcp://*:5556");
+    assert(rc3 == 0);
 
 
     // Variable initialization
@@ -745,7 +978,7 @@ int main(int argc, char* argv[]){
 
     while(n!=WINDOW_SIZE*WINDOW_SIZE*max_roaches){
 
-        position_to_barata[n] = 0;
+        position_to_barata[n] = -1;
 
         n++;
     }
@@ -778,6 +1011,10 @@ int main(int argc, char* argv[]){
     // Spawn display thread
     pthread_t display;
     pthread_create( &display, NULL, thread_display, (void *) PUB_PORT); // ADD IP_nPORT
+
+    // Spawn display thread
+    pthread_t bugs;
+    pthread_create( &bugs, NULL, thread_bugs, (void *) worker_nbr);
 
     //  Start the proxy
     zmq_proxy (frontend, backend, NULL);
