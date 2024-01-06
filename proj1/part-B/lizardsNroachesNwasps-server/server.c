@@ -13,7 +13,9 @@
 #include <math.h>
 
 #include <pthread.h>
-#include "../messages.pb-c.h"
+#include "messages.pb-c.h"
+
+#include <stdint.h>
 
 pthread_mutex_t mux_next_random; // UNDERSTAND THIS
 
@@ -85,7 +87,7 @@ matrix_translation p_to_xy(int p, int n_col){
 
 // lizard thread and functions
 
-void calc_pos(lizards_struct lizards[25], int i, int *lizard_matrix, int direction){
+void calc_pos(int i, int *lizard_matrix, int direction){
 
     int n_of_client = lizards[i].ch - 97;
 
@@ -93,6 +95,7 @@ void calc_pos(lizards_struct lizards[25], int i, int *lizard_matrix, int directi
 
     int x = lizards[i].x;
     int y = lizards[i].y;
+    printf("x: %d, y: %d.\n", lizards[i].x, lizards[i].y);
     //int pos = x*WINDOW_SIZE + y;
 
     switch (direction)
@@ -146,7 +149,7 @@ void calc_pos(lizards_struct lizards[25], int i, int *lizard_matrix, int directi
 
 }
 
-ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]){
+void lizard_connect(int* lizard_matrix, lizards_struct lizards[25], ResponseToClient * client_response){
 
     bool found_empty_spot = false;
     bool server_full = false;
@@ -157,7 +160,7 @@ ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]
     int i = 0;
     int j = 0;
 
-    ResponseToClient * client_response;
+    
     
     //srand((int)time); // uncomment THIS!
 
@@ -170,7 +173,7 @@ ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]
             while(j!=1000){        // also needs to be locked to make sure two lizards don't try to get placed on the same position
                 
                 x_rand = rand() % (WINDOW_SIZE-1);
-                y_rand = rand() % (WINDOW_SIZE-1);
+                y_rand = rand() % (WINDOW_SIZE-1); 
                 
                 if(lizard_matrix[x_rand*WINDOW_SIZE + y_rand] == -1){ // ADICIONAR VERIFICAÇAO PARA ROACHES!
 
@@ -186,9 +189,12 @@ ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]
                     lizards[i].score = 0;
 
                     client_response->code = lizards[i].code;
-                    client_response->assigned_char = lizards[i].ch;
+                    //char buffer [2];
+                    //strcat(buffer, &lizards[i].ch);
+                    client_response->assigned_char = strdup(&lizards[i].ch);
                     client_response->status = 1;
-                    client_response->score = 0;
+                    client_response->score = 0; 
+
                     break;
                 }
                 j++;
@@ -210,7 +216,7 @@ ResponseToClient * lizard_connect(int* lizard_matrix, lizards_struct lizards[25]
 
     char_to_give = '0';
 
-    return client_response;
+    return;
 
 }
 
@@ -232,34 +238,46 @@ void *thread_lizards( void *ptr ){
     char * msg_buf;
     ClientLizardMessage * client;
     ResponseToClient * client_response;
+    ResponseToClient client_response_ori = RESPONSE_TO_CLIENT__INIT; 
     RemoteScreen screen = REMOTE_SCREEN__INIT;
+
+    client_response = &client_response_ori;
+
+    client_response->has_status = 1;
+    client_response->has_code = 1;
+    client_response->has_score = 1;
 
     while (1){
 
         //zmq_recv (responder, &client, sizeof(client_message), 0);
         msg_len = zmq_recvmsg(responder, &zmq_msg, 0); 
         msg_data = zmq_msg_data(&zmq_msg);
-        client = client_lizard_message__unpack(NULL, msg_len, msg_data);
+        client = client_lizard_message__unpack(NULL, msg_len, msg_data); 
 
-        //client->msg_type = 1;
 
         // process lizard connection messages
         if(client->msg_type == 0){
 
-            client_response = lizard_connect(lizard_matrix, lizards);
+            client_response = &client_response_ori;
+
+            lizard_connect(lizard_matrix, lizards, client_response);
+
+            client_response = &client_response_ori;
+
 
             msg_len = response_to_client__get_packed_size(client_response);
             char * msg_buf = malloc(msg_len);
             response_to_client__pack(client_response, msg_buf);
             zmq_send (responder, msg_buf, msg_len, 0);
-            free(msg_buf);
+            //free(msg_buf);
+            free(client_response_ori.assigned_char);
         }
         
         // process lizard movement message
         if(client->msg_type == 1){
 
             for(i=0; i < 25; i++){
-                if(lizards[i].ch == client->ch && lizards[i].code == client->code){
+                if(lizards[i].ch == *client->ch && lizards[i].code == client->code){
                     break;
                 }
             }
@@ -268,7 +286,7 @@ void *thread_lizards( void *ptr ){
             screen.old_y = lizards[i].y;
             screen.old_direction = lizards[i].direction;
 
-            calc_pos(lizards, i, lizard_matrix, client->direction); // calculate new position
+            calc_pos(i, lizard_matrix, client->direction); // calculate new position
 
             //----------------------------------------------------------
 
@@ -302,7 +320,7 @@ void *thread_lizards( void *ptr ){
                 lizards[i].winner = true; // classify as a new winner lizard
 
             client_response->code = lizards[i].code;
-            client_response->assigned_char = lizards[i].ch;
+            client_response->assigned_char = strdup(&lizards[i].ch);
             client_response->status = 1;
             client_response->score = lizards[i].score;
 
@@ -312,7 +330,7 @@ void *thread_lizards( void *ptr ){
             zmq_send (responder, msg_buf, msg_len, 0);
             free(msg_buf);
 
-            *screen.ch = lizards[i].ch;
+            screen.ch = strdup(&lizards[i].ch);
             screen.score = lizards[i].score;
             screen.new_x = lizards[i].x;
             screen.new_y = lizards[i].y;
@@ -340,7 +358,7 @@ void *thread_lizards( void *ptr ){
                 lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1; //number of lizard occupying space
 
                 client_response->code = lizards[i].code;
-                client_response->assigned_char = lizards[i].ch;
+                *client_response->assigned_char = lizards[i].ch;
                 client_response->status = 2;
 
                 *screen.ch = lizards[i].ch;
@@ -394,7 +412,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
 
         switch (screen->old_direction)
         {
-        case 1:                         // VERIFY IF THIS WORKS!!
+        case 0:                         // VERIFY IF THIS WORKS!!
             for(i=0; i < 6; i++){
                 if(mode==0)
                     mvwaddch(my_win, screen->new_x+i, screen->new_y, ' ');
@@ -402,7 +420,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
                     mvwaddch(my_win, screen->old_x+i, screen->old_y, ' ');
             }
             break;
-        case 2:
+        case 1:
             for(i=0; i < 6; i++){
                 if(mode==0)
                     mvwaddch(my_win, screen->new_x-i, screen->new_y, ' ');
@@ -410,7 +428,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
                     mvwaddch(my_win, screen->old_x-i, screen->old_y, ' ');
             }
             break;
-        case 3:
+        case 2:
             for(i=0; i < 6; i++){
                 if(mode==0)
                     mvwaddch(my_win, screen->new_x, screen->new_y+i, ' ');
@@ -418,7 +436,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
                     mvwaddch(my_win, screen->old_x, screen->old_y+i, ' ');
             }
             break;
-        case 4:
+        case 3:
             for(i=0; i < 6; i++){
                 if(mode==0)
                     mvwaddch(my_win, screen->new_x, screen->new_y-i, ' ');
@@ -436,7 +454,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
         
         switch (screen->new_direction)
         {
-        case 1:
+        case 0:
             for(i=0; i < 6; i++){
                 if(mode == 2)
                     mvwaddch(my_win,screen->new_x+i, screen->new_y, '*');
@@ -444,7 +462,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
                 mvwaddch(my_win, screen->new_x+i, screen->new_y, '.');
             }
             break;
-        case 2:
+        case 1:
             for(i=0; i < 6; i++){
                 if(mode == 2)
                     mvwaddch(my_win, screen->new_x-i, screen->new_y, '*');
@@ -452,7 +470,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
                 mvwaddch(my_win, screen->new_x-i, screen->new_y, '.');
             }
             break;
-        case 3:
+        case 2:
             for(i=0; i < 6; i++){
                 if(mode == 2)
                     mvwaddch(my_win,screen->new_x, screen->new_y+i, '*');
@@ -460,7 +478,7 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
                 mvwaddch(my_win, screen->new_x, screen->new_y+i, '.');
             }
             break;
-        case 4:
+        case 3:
             for(i=0; i < 6; i++){
                 if(mode == 2)
                     mvwaddch(my_win, screen->new_x, screen->new_y-i, '*');

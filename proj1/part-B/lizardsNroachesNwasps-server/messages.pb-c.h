@@ -36,6 +36,7 @@ typedef enum _DirectionT {
 struct  _ClientLizardMessage
 {
   ProtobufCMessage base;
+  protobuf_c_boolean has_msg_type;
   int32_t msg_type;
   protobuf_c_boolean has_code;
   int32_t code;
@@ -45,15 +46,17 @@ struct  _ClientLizardMessage
 };
 #define CLIENT_LIZARD_MESSAGE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&client_lizard_message__descriptor) \
-    , 0, 0, 0, NULL, 0, DIRECTION_T__UP }
+    , 0, 0, 0, 0, NULL, 0, DIRECTION_T__UP }
 
 
 struct  _ClientRoachesMessage
 {
   ProtobufCMessage base;
+  protobuf_c_boolean has_msg_type;
   int32_t msg_type;
   protobuf_c_boolean has_code;
   int32_t code;
+  protobuf_c_boolean has_n_roaches;
   int32_t n_roaches;
   size_t n_r_scores;
   int32_t *r_scores;
@@ -64,12 +67,13 @@ struct  _ClientRoachesMessage
 };
 #define CLIENT_ROACHES_MESSAGE__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&client_roaches_message__descriptor) \
-    , 0, 0, 0, 0, 0,NULL, 0,NULL, 0,NULL }
+    , 0, 0, 0, 0, 0, 0, 0,NULL, 0,NULL, 0,NULL }
 
 
 struct  _RemoteScreen
 {
   ProtobufCMessage base;
+  protobuf_c_boolean has_msg_type;
   int32_t msg_type;
   char *ch;
   protobuf_c_boolean has_old_x;
@@ -91,23 +95,23 @@ struct  _RemoteScreen
 };
 #define REMOTE_SCREEN__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&remote_screen__descriptor) \
-    , 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECTION_T__UP, 0, DIRECTION_T__UP, 0,NULL }
+    , 0, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, DIRECTION_T__UP, 0, DIRECTION_T__UP, 0,NULL }
 
 
 struct  _ResponseToClient
 {
   ProtobufCMessage base;
+  protobuf_c_boolean has_status;
   int32_t status;
   protobuf_c_boolean has_code;
   int32_t code;
-  protobuf_c_boolean has_assigned_char;
-  int32_t assigned_char;
+  char *assigned_char;
   protobuf_c_boolean has_score;
   int32_t score;
 };
 #define RESPONSE_TO_CLIENT__INIT \
  { PROTOBUF_C_MESSAGE_INIT (&response_to_client__descriptor) \
-    , 0, 0, 0, 0, 0, 0, 0 }
+    , 0, 0, 0, 0, NULL, 0, 0 }
 
 
 /* ClientLizardMessage methods */

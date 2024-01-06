@@ -80,7 +80,6 @@ int main()
     display_req.client_credit_card = "999123222222";
 
     int msg_len = payperview_req__get_packed_size(&display_req);
-
     char * msg_buf = malloc(msg_len);
     payperview_req__pack(&display_req, msg_buf);
     zmq_send(requester, msg_buf, msg_len, 0);

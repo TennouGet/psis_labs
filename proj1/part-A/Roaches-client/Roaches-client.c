@@ -78,6 +78,7 @@ int main(int argc, char **argv)
     // send connection message
     zmq_send (requester, &join, sizeof(join), 0);
     zmq_recv (requester, &roach_response, sizeof(roach_response), 0);
+    
     if(roach_response.status == 1){
         printf("Server response OK, roaches created.\n");
     }

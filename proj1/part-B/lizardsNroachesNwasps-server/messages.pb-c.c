@@ -192,9 +192,9 @@ static const ProtobufCFieldDescriptor client_lizard_message__field_descriptors[4
   {
     "msg_type",
     1,
-    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(ClientLizardMessage, has_msg_type),
     offsetof(ClientLizardMessage, msg_type),
     NULL,
     NULL,
@@ -269,9 +269,9 @@ static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[
   {
     "msg_type",
     1,
-    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(ClientRoachesMessage, has_msg_type),
     offsetof(ClientRoachesMessage, msg_type),
     NULL,
     NULL,
@@ -293,9 +293,9 @@ static const ProtobufCFieldDescriptor client_roaches_message__field_descriptors[
   {
     "n_roaches",
     3,
-    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(ClientRoachesMessage, has_n_roaches),
     offsetof(ClientRoachesMessage, n_roaches),
     NULL,
     NULL,
@@ -372,9 +372,9 @@ static const ProtobufCFieldDescriptor remote_screen__field_descriptors[10] =
   {
     "msg_type",
     1,
-    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(RemoteScreen, has_msg_type),
     offsetof(RemoteScreen, msg_type),
     NULL,
     NULL,
@@ -527,9 +527,9 @@ static const ProtobufCFieldDescriptor response_to_client__field_descriptors[4] =
   {
     "status",
     1,
-    PROTOBUF_C_LABEL_REQUIRED,
+    PROTOBUF_C_LABEL_OPTIONAL,
     PROTOBUF_C_TYPE_INT32,
-    0,   /* quantifier_offset */
+    offsetof(ResponseToClient, has_status),
     offsetof(ResponseToClient, status),
     NULL,
     NULL,
@@ -552,8 +552,8 @@ static const ProtobufCFieldDescriptor response_to_client__field_descriptors[4] =
     "assigned_char",
     3,
     PROTOBUF_C_LABEL_OPTIONAL,
-    PROTOBUF_C_TYPE_INT32,
-    offsetof(ResponseToClient, has_assigned_char),
+    PROTOBUF_C_TYPE_STRING,
+    0,   /* quantifier_offset */
     offsetof(ResponseToClient, assigned_char),
     NULL,
     NULL,

@@ -1,0 +1,17 @@
+{
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/tennouget/psis_labs/proj1/part-B/lizardsNroachesNwasps-server",
+            "binaryPath": "/home/tennouget/psis_labs/proj1/part-B/lizardsNroachesNwasps-server/server",
+            "binaryArgs": []
+        },
+        {
+            "cwd": "/home/tennouget/psis_labs/proj1/part-B/lizardsNroachesNwasps-server",
+            "binaryPath": "/home/tennouget/psis_labs/proj1/part-B/lizardsNroachesNwasps-server/Lizard-client1",
+            "binaryArgs": []
+        }
+    ],
+    "files.associations": {
+        "messages.pb-c.h": "c"
+    }
+}
