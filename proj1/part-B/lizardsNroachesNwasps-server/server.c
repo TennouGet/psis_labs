@@ -23,8 +23,8 @@ pthread_mutex_t mux_next_random; // UNDERSTAND THIS
 
 void *context;
 void *bugs_context;
-void *responder;
 void *publisher;
+void *responder;
 char buffer[20] = "screen";
 
 char FRONT_PORT[20];
@@ -759,8 +759,7 @@ void *thread_display(void *PORT)
 
     strcat(IP_nPORT, sub_PORT);
 
-    // Socket to talk to screns
-    void *context = zmq_ctx_new();
+    // Socket to subscribe
     void *subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_connect(subscriber, "tcp://localhost:5557");
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
@@ -932,16 +931,12 @@ int main(int argc, char* argv[]){
     rc = zmq_bind (backend, "inproc://back-end");
     assert (rc == 0);
 
-
     // Socket to publish to displays
-    //void *pub_context = zmq_ctx_new();
-    //publisher = zmq_socket(pub_context, ZMQ_PUB);
-    //int rc2 = zmq_bind(publisher, PUB_PORT);
-    //assert(rc2 == 0);
+    publisher = zmq_socket(context, ZMQ_PUB);
+    rc = zmq_bind(publisher, PUB_PORT);
+    assert(rc == 0);
 
-
-    bugs_context = zmq_ctx_new();
-    responder = zmq_socket(bugs_context, ZMQ_REP);
+    responder = zmq_socket(context, ZMQ_REP);
     int rc3 = zmq_bind(responder, "tcp://*:5556");
     assert(rc3 == 0);
 
