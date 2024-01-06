@@ -776,10 +776,6 @@ void *thread_display(void *PORT)
     printf("sub_name: %s", sub_name);
 
     char buffer[20];
-    char buffer2[20];
-
-    //zmq_recv (subscriber, buffer, strlen(buffer), 0);
-    //printf("buffer: %s", buffer);
     
     // ncurses initialization
 	initscr();
@@ -788,10 +784,10 @@ void *thread_display(void *PORT)
 	noecho();
 
 
-    // creates a window and draws a border 
+    // creates a window and draws a border
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     WINDOW * text_win = newwin(26, 40, WINDOW_SIZE, 0);
-    box(my_win, 0 , 0);	
+    box(my_win, 0 , 0);
 	wrefresh(my_win);
     wrefresh(text_win);
 
@@ -938,10 +934,10 @@ int main(int argc, char* argv[]){
 
 
     // Socket to publish to displays
-    void *pub_context = zmq_ctx_new();
-    publisher = zmq_socket(pub_context, ZMQ_PUB);
-    int rc2 = zmq_bind(publisher, PUB_PORT);
-    assert(rc2 == 0);
+    //void *pub_context = zmq_ctx_new();
+    //publisher = zmq_socket(pub_context, ZMQ_PUB);
+    //int rc2 = zmq_bind(publisher, PUB_PORT);
+    //assert(rc2 == 0);
 
 
     bugs_context = zmq_ctx_new();

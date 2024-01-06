@@ -22,6 +22,8 @@
         }
     ],
     "files.associations": {
-        "messages.pb-c.h": "c"
+        "messages.pb-c.h": "c",
+        "types.h": "c",
+        "ncurses.h": "c"
     }
 }

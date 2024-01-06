@@ -140,35 +140,32 @@ void *thread_display(void *PORT)
     // Socket to talk to screns
     void *context = zmq_ctx_new();
     void *subscriber = zmq_socket(context, ZMQ_SUB);
-    zmq_connect(subscriber, PUB_PORT);
+    zmq_connect(subscriber, "tcp://localhost:5557");
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
     zmq_msg_t zmq_msg;
     zmq_msg_init(&zmq_msg);
     int msg_len;
     void * msg_data;
-    RemoteScreen * screen;
+    RemoteScreen * screen2;
 
     printf("Connected to server");
 
     printf("sub_name: %s", sub_name);
 
     char buffer[20];
-
-    zmq_recv (subscriber, buffer, strlen(buffer), 0);
-    printf("buffer: %s", buffer);
     
     // ncurses initialization
-	initscr();
-	cbreak();
-    keypad(stdscr, TRUE);
-	noecho();
+	//initscr();
+	//cbreak();
+    //keypad(stdscr, TRUE);
+	//noecho();
 
 
-    // creates a window and draws a border 
+    // creates a window and draws a border
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     WINDOW * text_win = newwin(26, 40, WINDOW_SIZE, 0);
-    box(my_win, 0 , 0);	
+    box(my_win, 0 , 0);
 	wrefresh(my_win);
     wrefresh(text_win);
 
@@ -176,45 +173,45 @@ void *thread_display(void *PORT)
     {
 
         // receive message from screen trough socket
-        //zmq_recv (subscriber, &screen, sizeof(screen), 0);
+        zmq_recv (subscriber, buffer, strlen(buffer), 0);
         msg_len = zmq_recvmsg(subscriber, &zmq_msg, 0);
         msg_data = zmq_msg_data(&zmq_msg);
-        screen = remote_screen__unpack(NULL, msg_len, msg_data);
+        screen2 = remote_screen__unpack(NULL, msg_len, msg_data);
         
         // process the movement message
 
         int i = 0;
         
-        if(screen->msg_type == 1){ // process lizard movement
+        if(screen2->msg_type == 1){ // process lizard movement
 
-            if(screen->score > 49)
-                update_window(my_win, screen, 2);
+            if(screen2->score > 49)
+                update_window(my_win, screen2, 2);
             else
-                update_window(my_win, screen, 1);
+                update_window(my_win, screen2, 1);
 
             box(my_win, 0 , 0);
             char str[40];
-            snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen->ch, screen->score);
+            snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen2->ch, screen2->score);
 
-            mvwaddstr(text_win, *screen->ch - 97, 0, str);
+            mvwaddstr(text_win, *screen2->ch - 97, 0, str);
             wrefresh(text_win);
             wrefresh(my_win);
         }
 
-        if(screen->msg_type == 2){ // process lizard leave
+        if(screen2->msg_type == 2){ // process lizard leave
 
-            wmove(my_win, screen->new_x, screen->new_y);
+            wmove(my_win, screen2->new_x, screen2->new_y);
             waddch(my_win,' ');
-            update_window(my_win, screen, 0); // erase leaving lizard
+            update_window(my_win, screen2, 0); // erase leaving lizard
             box(my_win, 0 , 0);
-            wmove(text_win, *screen->ch - 97, 0);
+            wmove(text_win, *screen2->ch - 97, 0);
             wclrtoeol(text_win);
             wrefresh(text_win);
             wrefresh(my_win);
 
         }
 
-        if(screen->msg_type == 3){ // process roaches movement
+        if(screen2->msg_type == 3){ // process roaches movement
 
             int old_x = 0;
             int old_y = 0;
@@ -224,12 +221,12 @@ void *thread_display(void *PORT)
             int ID = 0;
 
             for(i=0; i<10; i++){
-                ID = screen->screen_roaches[i*10 + 3];
+                ID = screen2->screen_roaches[i*10 + 3];
                 old_x = roaches[ID][0];
                 old_y = roaches[ID][1];
-                new_x = screen->screen_roaches[i*10 + 0];
-                new_y = screen->screen_roaches[i*10 + 1];
-                v = screen->screen_roaches[i*10 + 2];
+                new_x = screen2->screen_roaches[i*10 + 0];
+                new_y = screen2->screen_roaches[i*10 + 1];
+                v = screen2->screen_roaches[i*10 + 2];
 
                 if(ID > -1){
                     if(v != 0){
@@ -246,6 +243,9 @@ void *thread_display(void *PORT)
             wrefresh(my_win);
         }
 
+        //zmq_msg_close(msg_data);
+        //free(screen);
+        //zmq_msg_close (&zmq_msg);
     }
 
   	endwin();			// End curses mode
@@ -288,40 +288,35 @@ int main(int argc, char* argv[])
     int code = zmq_connect (requester, IP_n_PORT);
     printf ("\rConnected to server? %d\n", code);
 
-    // Spawn display thread
-    //pthread_t display;
-    //pthread_create( &display, NULL, thread_display, (void *) PUB_PORT);
+    // ncurses initialization
+	initscr();
+	cbreak();
+    keypad(stdscr, TRUE);
+	noecho();
 
-    //ClientLizardMessage * join;
+    // Spawn display thread
+    pthread_t display;
+    pthread_create( &display, NULL, thread_display, (void *) PUB_PORT);
+
     ClientLizardMessage join = CLIENT_LIZARD_MESSAGE__INIT;
     ClientLizardMessage move = CLIENT_LIZARD_MESSAGE__INIT;
-    ClientLizardMessage * leave;
+    ClientLizardMessage leave = CLIENT_LIZARD_MESSAGE__INIT;
     ResponseToClient * client_response;
 
     zmq_msg_t zmq_msg;
     zmq_msg_init(&zmq_msg);
 
     join.has_msg_type = 1;
-    join.msg_type = 0;
-
     join.has_code = 1;
-    join.code = 54;
-
-    join.ch = 0;
-
     join.has_direction = 1;
-    join.direction = 1;
-
 
     move.has_msg_type = 1;
     move.has_code = 1;
     move.has_direction = 1;
     
-    
-
-    
-    //zmq_send (requester, &join, sizeof(join), 0);
-    //zmq_recv (requester, &client_response, sizeof(client_response), 0);
+    leave.has_msg_type = 1;
+    leave.has_code = 1;
+    leave.has_direction = 1;
 
     // send connection message
     int msg_len = client_lizard_message__get_packed_size(&join);
@@ -347,17 +342,9 @@ int main(int argc, char* argv[])
     move.msg_type = 1;
     move.code = client_response->code;
 
-
-	initscr();			/* Start curses mode 		*/
-	cbreak();				/* Line buffering disabled	*/
-	keypad(stdscr, TRUE);		/* We get F1, F2 etc..		*/
-	noecho();			/* Don't echo() while we do getch */
-
-    mvprintw(1, 0, "\rConnected, you can now move using the arrow keys.");
-    mvprintw(2, 0, "\rYour assigned char: %s", client_response->assigned_char);
-
     int ch;
     bool exit_program = false;
+    bool valid_ch = false;
 
     int n = 0;
     do
@@ -368,47 +355,43 @@ int main(int argc, char* argv[])
         switch (ch)
         {
             case KEY_LEFT:
-                mvprintw(0,0,"%d Left arrow is pressed", n);
                 move.direction = 2;
+                valid_ch = true;
                 break;
             case KEY_RIGHT:
-                mvprintw(0,0,"%d Right arrow is pressed", n);
                 move.direction = 3;
+                valid_ch = true;
                 break;
             case KEY_DOWN:
-                mvprintw(0,0,"%d Down arrow is pressed", n);
                 move.direction = 1;
+                valid_ch = true;
                 break;
             case KEY_UP:
-                mvprintw(0,0,"%d Up arrow is pressed", n);
-
                 move.direction = 0;
+                valid_ch = true;
                 break;
             case 'q':
-                mvprintw(0,0,"q is pressed, sending exit message");
+                printf("q is pressed, sending exit message");
                 exit_program = true;
             case 'Q':
-                mvprintw(0,0,"Q is pressed, sending exit message");
+                printf("Q is pressed, sending exit message");
                 exit_program = true;
             default:
                 ch = 'x';
+                valid_ch = false;
                     break;
         }
-        refresh();			// Print it on to the real screen
         
         if(exit_program){
-            endwin();
 
             //send byebye message to server
-            leave->msg_type = 2;
-            leave->code = move.code;
-            leave->ch = move.ch;
-            //zmq_send (requester, &leave, sizeof(leave), 0);
-            //zmq_recv (requester, &client_response, sizeof(client_response), 0);
+            leave.msg_type = 2;
+            leave.code = move.code;
+            leave.ch = move.ch;
 
-            msg_len = client_lizard_message__get_packed_size(leave);
+            msg_len = client_lizard_message__get_packed_size(&leave);
             msg_buf = malloc(msg_len);
-            client_lizard_message__pack(leave, msg_buf);
+            client_lizard_message__pack(&leave, msg_buf);
             zmq_send (requester, msg_buf, msg_len, 0);
             free(msg_buf);
 
@@ -418,54 +401,47 @@ int main(int argc, char* argv[])
 
             if(client_response->status == 2){
                 printf("exiting..\n");
-                endwin();
                 zmq_close (requester);
                 zmq_ctx_destroy (context);
                 printf("Disconnected from server.\n");
-                return 0;
+                break;
             }
             else{
                 printf("error while trying to exit");
             }
         }
 
-        //send the movement message
-        //zmq_send (requester, &move, sizeof(move), 0);
-        //zmq_recv (requester, &client_response, sizeof(client_response), 0);
+        if(valid_ch==true){
 
-        msg_len = client_lizard_message__get_packed_size(&move);
-        msg_buf = malloc(msg_len);
-        client_lizard_message__pack(&move, msg_buf);
-        zmq_send (requester, msg_buf, msg_len, 0);
-        free(msg_buf);
+            //send the movement message
+            msg_len = client_lizard_message__get_packed_size(&move);
+            msg_buf = malloc(msg_len);
+            client_lizard_message__pack(&move, msg_buf);
+            zmq_send (requester, msg_buf, msg_len, 0);
+            free(msg_buf);
 
-        msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
-        msg_data = zmq_msg_data(&zmq_msg);
-        client_response = response_to_client__unpack(NULL, msg_len, msg_data);
+            msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+            msg_data = zmq_msg_data(&zmq_msg);
+            client_response = response_to_client__unpack(NULL, msg_len, msg_data);
 
-        if(client_response->status == 1)
-            mvprintw(1, 0, "\rServer status: OK");
-        if(client_response->status == -1 || client_response->status == -2){
-            endwin();
-            zmq_close (requester);
-            zmq_ctx_destroy (context);
-            if(client_response->status == -1)
-                printf("\rError -1: server full, try again.");
-            if(client_response->status == -2)
-                printf("Error -2: no empty space to deploy lizard, try again.\n");
-            return 0;
+            if(client_response->status == 1)
+                printf("\rServer status: OK");
+            if(client_response->status == -1 || client_response->status == -2){
+                zmq_close (requester);
+                zmq_ctx_destroy (context);
+                if(client_response->status == -1)
+                    printf("\rError -1: server full, try again.");
+                if(client_response->status == -2)
+                    printf("Error -2: no empty space to deploy lizard, try again.\n");
+                return 0;
+            }
+            if(client_response->status != 1 && client_response->status != -1 && client_response->status != -2)
+                printf("\rError, server response: %d", client_response->status);
+
         }
-        if(client_response->status != 1 && client_response->status != -1 && client_response->status != -2)
-            mvprintw(1, 0, "\rError, server response: %d", client_response->status);
 
-        mvprintw(2, 0, "\rYour assigned char: %s", client_response->assigned_char);
-        mvprintw(3, 0, "\rYour score: %d", client_response->score);
-        mvprintw(4, 0, "\r");
         
     }while(ch != 27);
-    
-    
-  	endwin();			// End curses mode
 
     zmq_close (requester);
     zmq_ctx_destroy (context);
