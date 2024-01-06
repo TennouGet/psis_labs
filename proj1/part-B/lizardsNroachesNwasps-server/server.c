@@ -1,5 +1,5 @@
 #include <ncurses.h>
-#include "../header.h"
+#include "header.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -95,7 +95,7 @@ void calc_pos(int i, int *lizard_matrix, int direction){
 
     int x = lizards[i].x;
     int y = lizards[i].y;
-    printf("x: %d, y: %d.\n", lizards[i].x, lizards[i].y);
+    //printf("x: %d, y: %d.\n", lizards[i].x, lizards[i].y);
     //int pos = x*WINDOW_SIZE + y;
 
     switch (direction)
@@ -247,6 +247,15 @@ void *thread_lizards( void *ptr ){
     client_response->has_code = 1;
     client_response->has_score = 1;
 
+    screen.has_msg_type = 1;
+    screen.has_old_x = 1;
+    screen.has_old_y = 1;
+    screen.has_new_x = 1;
+    screen.has_new_y = 1;
+    screen.has_score = 1;
+    screen.has_old_direction = 1;
+    screen.has_new_direction = 1;
+
     while (1){
 
         //zmq_recv (responder, &client, sizeof(client_message), 0);
@@ -338,12 +347,15 @@ void *thread_lizards( void *ptr ){
             screen.msg_type = 1;
 
 
+            
             zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
             msg_len = remote_screen__get_packed_size(&screen);
             msg_buf = malloc(msg_len);
             remote_screen__pack(&screen, msg_buf);
-            zmq_send (responder, msg_buf, msg_len, 0);
-            free(msg_buf);
+            zmq_send (publisher, msg_buf, msg_len, 0);
+            //free(msg_buf);
+            //free(screen.ch);
+            //printf("hi");
         }
 
         // process lizard leave message
@@ -517,30 +529,31 @@ void *thread_display(void *PORT)
 
     char sub_name[20] = "screen";
 
-    char IP_nPORT[40] = "tcp://localhost:";
+    char IP_nPORT[40] = "";
 
     strcat(IP_nPORT, sub_PORT);
 
     // Socket to talk to screns
     void *context = zmq_ctx_new();
     void *subscriber = zmq_socket(context, ZMQ_SUB);
-    zmq_connect(subscriber, IP_nPORT);
+    zmq_connect(subscriber, "tcp://localhost:5557");
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
 
     zmq_msg_t zmq_msg;
     zmq_msg_init(&zmq_msg);
     int msg_len;
     void * msg_data;
-    RemoteScreen * screen;
+    RemoteScreen * screen2;
 
     printf("Connected to server");
 
     printf("sub_name: %s", sub_name);
 
     char buffer[20];
+    char buffer2[20];
 
-    zmq_recv (subscriber, buffer, strlen(buffer), 0);
-    printf("buffer: %s", buffer);
+    //zmq_recv (subscriber, buffer, strlen(buffer), 0);
+    //printf("buffer: %s", buffer);
     
     // ncurses initialization
 	initscr();
@@ -560,45 +573,45 @@ void *thread_display(void *PORT)
     {
 
         // receive message from screen trough socket
-        //zmq_recv (subscriber, &screen, sizeof(screen), 0);
+        zmq_recv (subscriber, buffer, strlen(buffer), 0);
         msg_len = zmq_recvmsg(subscriber, &zmq_msg, 0);
         msg_data = zmq_msg_data(&zmq_msg);
-        screen = remote_screen__unpack(NULL, msg_len, msg_data);
+        screen2 = remote_screen__unpack(NULL, msg_len, msg_data);
         
         // process the movement message
 
         int i = 0;
         
-        if(screen->msg_type == 1){ // process lizard movement
+        if(screen2->msg_type == 1){ // process lizard movement
 
-            if(screen->score > 49)
-                update_window(my_win, screen, 2);
+            if(screen2->score > 49)
+                update_window(my_win, screen2, 2);
             else
-                update_window(my_win, screen, 1);
+                update_window(my_win, screen2, 1);
 
             box(my_win, 0 , 0);
             char str[40];
-            snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen->ch, screen->score);
+            snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen2->ch, screen2->score);
 
-            mvwaddstr(text_win, *screen->ch - 97, 0, str);
+            mvwaddstr(text_win, *screen2->ch - 97, 0, str);
             wrefresh(text_win);
             wrefresh(my_win);
         }
 
-        if(screen->msg_type == 2){ // process lizard leave
+        if(screen2->msg_type == 2){ // process lizard leave
 
-            wmove(my_win, screen->new_x, screen->new_y);
+            wmove(my_win, screen2->new_x, screen2->new_y);
             waddch(my_win,' ');
-            update_window(my_win, screen, 0); // erase leaving lizard
+            update_window(my_win, screen2, 0); // erase leaving lizard
             box(my_win, 0 , 0);
-            wmove(text_win, *screen->ch - 97, 0);
+            wmove(text_win, *screen2->ch - 97, 0);
             wclrtoeol(text_win);
             wrefresh(text_win);
             wrefresh(my_win);
 
         }
 
-        if(screen->msg_type == 3){ // process roaches movement
+        if(screen2->msg_type == 3){ // process roaches movement
 
             int old_x = 0;
             int old_y = 0;
@@ -608,12 +621,12 @@ void *thread_display(void *PORT)
             int ID = 0;
 
             for(i=0; i<10; i++){
-                ID = screen->screen_roaches[i*10 + 3];
+                ID = screen2->screen_roaches[i*10 + 3];
                 old_x = roaches[ID][0];
                 old_y = roaches[ID][1];
-                new_x = screen->screen_roaches[i*10 + 0];
-                new_y = screen->screen_roaches[i*10 + 1];
-                v = screen->screen_roaches[i*10 + 2];
+                new_x = screen2->screen_roaches[i*10 + 0];
+                new_y = screen2->screen_roaches[i*10 + 1];
+                v = screen2->screen_roaches[i*10 + 2];
 
                 if(ID > -1){
                     if(v != 0){
@@ -630,6 +643,9 @@ void *thread_display(void *PORT)
             wrefresh(my_win);
         }
 
+        //zmq_msg_close(msg_data);
+        //free(screen);
+        //zmq_msg_close (&zmq_msg);
     }
 
   	endwin();			// End curses mode
@@ -672,8 +688,6 @@ int input_treatment(int argc, char *argv[]){
 
     return 1;
 }
-
-
 
 
 int main(int argc, char* argv[]){
