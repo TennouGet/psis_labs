@@ -637,6 +637,113 @@ void *thread_bugs( void *ptr ){
 
 }
 
+void *thread_timer( void *ptr ){
+
+
+
+
+    long int thread_number = (long int)ptr;
+
+    zmq_msg_t zmq_msg;
+    zmq_msg_init(&zmq_msg);
+
+    int i=0;
+
+    int msg_len;
+    void * msg_data;
+    char * msg_buf;
+
+
+    RemoteScreen screen = REMOTE_SCREEN__INIT;
+
+
+
+    screen.has_msg_type = 1;
+    screen.has_old_x = 0;
+    screen.has_old_y = 0;
+    screen.has_new_x = 0;
+    screen.has_new_y = 0;
+    screen.has_score = 0;
+    screen.has_old_direction = 0;
+    screen.has_new_direction = 0;
+
+    screen.screen_roaches = malloc(sizeof(int)*40);;
+    screen.n_screen_roaches = 40;
+
+    //prepare a roach move message to remote screen (used after roach client disconnects to respawn the roach)
+    //int i = 0;
+    //while(i!=10){
+    //    screen.screen_roaches[i*4+3] = -1;
+    //    i++;
+    //} 
+    
+
+    while(1){
+        
+        //check time to see if a roach can respawn
+        time(&now);
+        int update = 0;
+
+        if(now<r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
+            sleep(r_respawn_list[c_r_index]-now + 0.01);
+        }
+        else{
+            sleep(4);
+        }
+
+
+        while(now>r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
+            int id = time_to_r_id[c_r_index];
+            barataid_to_pos[id*4+3]=0;
+            //roach x pos
+            int x = 1+rand()%(WINDOW_SIZE-3);
+            barataid_to_pos[id*4+0] = x;
+            //roach y pos
+            int y = 1+rand()%(WINDOW_SIZE-3);
+            barataid_to_pos[id*4+1] = y;
+
+            int v = barataid_to_pos[id*4+2];
+
+            i=0;
+            while(position_to_barata[xyz_to_p(x,y,i)]!=-1){
+                i++;
+            }
+            position_to_barata[xyz_to_p(x,y,i)] = id;
+
+
+
+            //store information to update screen
+            update = 1;
+
+            int b = code_to_barataid[id*2+1];
+
+            screen.screen_roaches[b*4+0] = x;
+            screen.screen_roaches[b*4+1] = y;
+            screen.screen_roaches[b*4+2] = v;
+            screen.screen_roaches[b*4+3] = id;
+
+            r_respawn_list[c_r_index] = 0;
+            c_r_index++;
+        }
+        if(c_r_index==max_roaches){
+            c_r_index=0;
+        }
+        if(update==1){
+            //send update to remote screen
+            screen.msg_type = 3;
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            msg_len = remote_screen__get_packed_size(&screen);
+            msg_buf = malloc(msg_len);
+            remote_screen__pack(&screen, msg_buf);
+            zmq_send (publisher, msg_buf, msg_len, 0);
+        }
+
+    }
+
+    
+
+
+}
 
 // display thread and functions
 
@@ -1006,6 +1113,10 @@ int main(int argc, char* argv[]){
     // Spawn display thread
     pthread_t bugs;
     pthread_create( &bugs, NULL, thread_bugs, (void *) worker_nbr);
+
+    // Spawn roach respawn thread
+    pthread_t roach_respawn;
+    pthread_create( &roach_respawn, NULL, thread_timer, (void *) worker_nbr);
 
     //  Start the proxy
     zmq_proxy (frontend, backend, NULL);
