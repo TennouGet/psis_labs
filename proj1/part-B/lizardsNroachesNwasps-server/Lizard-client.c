@@ -171,7 +171,6 @@ void *thread_display(void *PORT)
 
     while (1)
     {
-
         // receive message from screen trough socket
         zmq_recv (subscriber, buffer, strlen(buffer), 0);
         msg_len = zmq_recvmsg(subscriber, &zmq_msg, 0);
@@ -346,11 +345,9 @@ int main(int argc, char* argv[])
     bool exit_program = false;
     bool valid_ch = false;
 
-    int n = 0;
-    do
-    {
-    	ch = getch();	
-        n++;
+    while(1){
+
+    	ch = getch();
         clear();
         switch (ch)
         {
@@ -441,7 +438,7 @@ int main(int argc, char* argv[])
         }
 
         
-    }while(ch != 27);
+    }
 
     zmq_close (requester);
     zmq_ctx_destroy (context);
