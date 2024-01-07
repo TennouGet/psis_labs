@@ -1050,7 +1050,13 @@ void *thread_display(void *PORT)
                     if(v != 0){
                         mvwaddch(my_win, old_x, old_y, ' ');
                     }
-                    mvwaddch(my_win, new_x, new_y, v + 48);
+                    if (v > 0){
+                        mvwaddch(my_win, new_x, new_y, v + 48);
+                    }
+                    else{
+                        mvwaddch(my_win, new_x, new_y, 35);
+                    }
+                    
                     roaches[ID][0] = new_x;
                     roaches[ID][1] = new_y;
                     roaches[ID][2] = v;
