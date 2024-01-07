@@ -12,10 +12,48 @@
 #include <pthread.h>
 #include "messages.pb-c.h"
 
+int leave_ctrl;
 
 int random_direction(){
     return  random()%4;
 }
+
+void *thread_disconnect( void *ptr ){
+
+    int ch;
+    bool exit_program = false;
+    bool valid_ch = false;
+
+    int ctrl = 1;
+    while(ctrl)
+    {
+    	ch = getch();	
+
+        clear();
+        switch (ch)
+        {
+            case 'q':
+                printf("q is pressed, sending exit message");
+                exit_program = true;
+            case 'Q':
+                printf("Q is pressed, sending exit message");
+                exit_program = true;
+            default:
+                ch = 'x';
+                valid_ch = false;
+                    break;
+        }
+
+        if(exit_program){ 
+            leave_ctrl = 1;
+            ctrl = 0;
+        }
+
+    }
+
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -63,6 +101,8 @@ int main(int argc, char **argv)
 
     ClientRoachesMessage join = CLIENT_ROACHES_MESSAGE__INIT;
     ClientRoachesMessage move = CLIENT_ROACHES_MESSAGE__INIT;
+    
+
 
     ResponseToClient * roach_response;
     
@@ -74,9 +114,19 @@ int main(int argc, char **argv)
     move.has_n_roaches = 1;
     move.has_code = 1;
 
-    
-    //struct client_message join, move;
-    //struct response_to_client roach_response;
+
+    ClientRoachesMessage leave = CLIENT_ROACHES_MESSAGE__INIT;
+
+
+    leave.has_msg_type = 1;
+    leave.msg_type = 5;
+
+
+    leave.has_code = 1;
+
+    leave.has_n_roaches = 1;
+    leave.n_roaches = 0;
+
 
     join.msg_type = 3;
     join.code = 0;
@@ -123,6 +173,14 @@ int main(int argc, char **argv)
     }
 
 
+    leave.code = roach_response->code;
+    leave_ctrl = 0;
+
+    // Spawn disconnect thread
+    long int worker_nbr;
+    pthread_t disconnect;
+    pthread_create( &disconnect, NULL, thread_disconnect, (void *) worker_nbr);
+
     
     printf("roaches: %d\n", n_roaches);
 
@@ -137,6 +195,17 @@ int main(int argc, char **argv)
 
     move.r_direction = malloc(sizeof(int)*10);
     move.n_r_direction = n_roaches;
+
+
+    // ncurses initialization
+	initscr();
+	cbreak();
+    keypad(stdscr, TRUE);
+	noecho();
+
+    // creates a window and draws a border
+    WINDOW * my_win = newwin(10, 30, 0, 0);
+	wrefresh(my_win);
 
     while (1){
         sleep_delay = 1000+random()%700000;
@@ -153,11 +222,15 @@ int main(int argc, char **argv)
             if (random()%3==0){
                 /* calculates new direction */
                 direction = random_direction();
-                printf("%d\n",direction);
 
                 move.r_direction[i] = direction;
                 move.r_bool[i] = 1;
-                printf("roach %d moved %d\n",i,move.r_direction[i]);
+                
+                char str[30];
+                snprintf(str, sizeof(str),"roach %d moved %d\n",i,move.r_direction[i]);
+
+                mvwaddstr(my_win, 2+i, 0, str);
+                wrefresh(my_win);
             }
             else{
                 move.r_bool[i] = 0;
@@ -167,15 +240,40 @@ int main(int argc, char **argv)
         }
 
         
+        if (leave_ctrl == 1){
+            endwin();
+            int msg_len = client_roaches_message__get_packed_size(&leave);
+            char * msg_buf = malloc(msg_len);
+            client_roaches_message__pack(&leave, msg_buf);
+            zmq_send (requester, msg_buf, msg_len, 0);
+            free(msg_buf);
 
 
-        //chosen_roach = random()%n_roaches;
+
+
+
+            msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+            msg_data = zmq_msg_data(&zmq_msg);
+            roach_response = response_to_client__unpack(NULL, msg_len, msg_data);
+
+            if(roach_response->status == 2){
+                printf("exiting..\n");
+                zmq_close (requester);
+                zmq_ctx_destroy (context);
+                printf("Disconnected from server.\n");
+                break;
+            }
+            else{
+                printf("error while trying to exit");
+            }
+            
+            return 0;
+        }
        
-        
-        //move.id = chosen_roach;
 
         
-        //printf("%d chosen roach\n",move.id);
+
+
 
 
         msg_len = client_roaches_message__get_packed_size(&move);
@@ -190,10 +288,9 @@ int main(int argc, char **argv)
         msg_data = zmq_msg_data(&zmq_msg);
         roach_response = response_to_client__unpack(NULL, msg_len, msg_data);  
 
-        if(roach_response->status == 1)
-            mvprintw(1, 0, "\rreceived: %d", roach_response->status);
-        else
-            mvprintw(1, 0, "\rError, server response: %d", roach_response->status);
+        if(roach_response->status != 1)
+            //mvprintw(1, 0, "\rError, server response: %d", roach_response->status);
+            return 0;
 
     }
 
