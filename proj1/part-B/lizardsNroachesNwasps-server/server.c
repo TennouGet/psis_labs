@@ -1055,6 +1055,30 @@ void *thread_display(void *PORT)
             wrefresh(my_win);
         }
 
+        if(screen2->msg_type == 4){ // process roaches leave
+
+            int old_x = 0;
+            int old_y = 0;
+            int ID = 0;
+
+            for(i=0; i<10; i++){
+                ID = screen2->screen_roaches[i*4 + 3];
+                old_x = roaches[ID][0];
+                old_y = roaches[ID][1];
+
+
+                mvwaddch(my_win, old_x, old_y, ' ');
+                    
+                roaches[ID][0] = 0;
+                roaches[ID][1] = 0;
+                roaches[ID][2] = 0;
+                
+            }
+
+            box(my_win, 0 , 0);	
+            wrefresh(my_win);
+        }
+
         //zmq_msg_close(msg_data);
         //free(screen);
         //zmq_msg_close (&zmq_msg);
