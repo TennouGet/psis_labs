@@ -52,6 +52,14 @@ int* barataid_to_pos;
 // pos x || pos y || server barata code (0-(maxroaches-1))
 int* position_to_barata;
 
+//keeps timestamp of when to kick client
+time_t* times_kicker_array;
+//keeps type of client and secret code
+int* codes_kicker_matrix;
+
+int time_to_kick = 60;
+
+
 lizards_struct lizards[25];
 int* lizard_matrix;
 
@@ -59,33 +67,8 @@ int xyz_to_p( int x, int y, int z ) {
     return (z * WINDOW_SIZE * WINDOW_SIZE) + (y * WINDOW_SIZE) + x;
 }
 
-int xy_to_p(int x, int y, int maxX, int n_col){
-    return (x*n_col+y);
-}
 
 
-matrix_translation p_to_xyz( int idx ) {
-    struct matrix_translation result;
-
-    result.z = idx / (WINDOW_SIZE * WINDOW_SIZE);
-    idx -= (result.z * WINDOW_SIZE * WINDOW_SIZE);
-    result.y = idx / WINDOW_SIZE;
-    result.x = idx % WINDOW_SIZE;
-
-
-    return result;
-}
-
-matrix_translation p_to_xy(int p, int n_col){
-    struct matrix_translation result;
-
-    result.x = (int) (p/n_col);
-    result.y = p - (result.x*n_col);
-    result.z = 0;
-
-    return result;
-
-}
 
 // lizard thread and functions
 
@@ -324,6 +307,17 @@ void *thread_lizards( void *ptr ){
             zmq_send (responder, msg_buf, msg_len, 0);
             //free(msg_buf);
             free(client_response_ori.assigned_char);
+
+            //enter client into inactivity kick table
+            time(&now);
+
+            i = 0;
+            while(times_kicker_array[i]!=0){
+                i++;
+            }
+            times_kicker_array[i] = now + time_to_kick;
+            codes_kicker_matrix[i*2+0] = 0;
+            codes_kicker_matrix[i*2+1] = client_response->code;
         }
         
         // process lizard movement message
@@ -404,6 +398,18 @@ void *thread_lizards( void *ptr ){
             screen.msg_type = 1;
 
 
+
+            //update time to kick if inactive
+            int n = 0;
+            while(codes_kicker_matrix[n*2+1]!=client->code){
+                n++;
+            }
+            time(&now);
+            times_kicker_array[n] = now + time_to_kick;
+
+
+
+
             
             zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
             msg_len = remote_screen__get_packed_size(&screen);
@@ -418,50 +424,50 @@ void *thread_lizards( void *ptr ){
         // process lizard leave message
         if(client->msg_type == 2){
 
-                for(i=0; i < 25; i++){
-                    if(lizards[i].ch == *client->ch && lizards[i].code == client->code){
-                        break;
-                    }
+            for(i=0; i < 25; i++){
+                if(lizards[i].ch == *client->ch && lizards[i].code == client->code){
+                    break;
                 }
-
-                lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1; //number of lizard occupying space
-
-                client_response->code = lizards[i].code;
-                client_response->assigned_char = strdup(&lizards[i].ch);;
-                client_response->status = 2;
-
-                screen.ch = strdup(&lizards[i].ch);
-                screen.score = lizards[i].score;
-                screen.new_x = lizards[i].x;
-                screen.new_y = lizards[i].y;
-                screen.new_direction = lizards[i].direction;
-                screen.old_direction = lizards[i].direction;
-                screen.msg_type = 2;
-
-
-                msg_len = response_to_client__get_packed_size(client_response);
-                msg_buf = malloc(msg_len);
-                response_to_client__pack(client_response, msg_buf);
-                zmq_send (responder, msg_buf, msg_len, 0);
-                free(msg_buf);
-
-                zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
-                msg_len = remote_screen__get_packed_size(&screen);
-                msg_buf = malloc(msg_len);
-                remote_screen__pack(&screen, msg_buf);
-                zmq_send (publisher, msg_buf, msg_len, 0);
-                free(msg_buf);
-
-                client_response->code = 0;
-                client_response->assigned_char = 0;
-                client_response->status = 0;
-
-                lizards[i].ch = 0;
-                lizards[i].score = 0;
-                lizards[i].code = 0;
-                lizards[i].x = 0;
-                lizards[i].y = 0;
             }
+
+            lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1; //number of lizard occupying space
+
+            client_response->code = lizards[i].code;
+            client_response->assigned_char = strdup(&lizards[i].ch);;
+            client_response->status = 2;
+
+            screen.ch = strdup(&lizards[i].ch);
+            screen.score = lizards[i].score;
+            screen.new_x = lizards[i].x;
+            screen.new_y = lizards[i].y;
+            screen.new_direction = lizards[i].direction;
+            screen.old_direction = lizards[i].direction;
+            screen.msg_type = 2;
+
+
+            msg_len = response_to_client__get_packed_size(client_response);
+            msg_buf = malloc(msg_len);
+            response_to_client__pack(client_response, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
+
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            msg_len = remote_screen__get_packed_size(&screen);
+            msg_buf = malloc(msg_len);
+            remote_screen__pack(&screen, msg_buf);
+            zmq_send (publisher, msg_buf, msg_len, 0);
+            free(msg_buf);
+
+            client_response->code = 0;
+            client_response->assigned_char = 0;
+            client_response->status = 0;
+
+            lizards[i].ch = 0;
+            lizards[i].score = 0;
+            lizards[i].code = 0;
+            lizards[i].x = 0;
+            lizards[i].y = 0;
+        }
     
     }
 
@@ -552,6 +558,18 @@ void *thread_bugs( void *ptr ){
 
                 roach_response.status = 1;
                 roach_response.code = code;
+
+                //enter client into inactivity kick table
+                time(&now);
+
+                i = 0;
+                while(times_kicker_array[i]!=0){
+                    i++;
+                }
+                times_kicker_array[i] = now + time_to_kick;
+                codes_kicker_matrix[i*2+0] = 1;
+                codes_kicker_matrix[i*2+1] = code;
+
             }
             else{
                 //reject
@@ -682,6 +700,17 @@ void *thread_bugs( void *ptr ){
 
             roach_response.code = client->code;
             roach_response.status = 1;
+
+
+
+            //update time to kick if inactive
+            int n = 0;
+            while(codes_kicker_matrix[n*2+1]!=client->code){
+                n++;
+            }
+            time(&now);
+            times_kicker_array[n] = now + time_to_kick;
+
         
 
             msg_len = response_to_client__get_packed_size(&roach_response);
@@ -899,7 +928,7 @@ void *thread_kicker( void *ptr ){
     leave_roach_wasp.has_msg_type = 1;
     leave_roach_wasp.msg_type = 5;
     leave_roach_wasp.has_code = 1;
-    leave_roach_wasp.has_n_roaches = 1;
+    leave_roach_wasp.has_n_roaches = 0;
     leave_roach_wasp.n_roaches = 0;
 
     int msg_len;
@@ -908,40 +937,70 @@ void *thread_kicker( void *ptr ){
     zmq_msg_t zmq_msg;
     zmq_msg_init(&zmq_msg);
 
-    if(0){
+    while(1){
 
-        // send lizard kick message
-        msg_len = client_lizard_message__get_packed_size(&leave_lizard);
-        msg_buf = malloc(msg_len);
-        client_lizard_message__pack(&leave_lizard, msg_buf);
-        zmq_send (requester_lizard, msg_buf, msg_len, 0);
-        free(msg_buf);
+        sleep(20);
+        time(&now);
 
-        // receive confirmation
-        msg_len = zmq_recvmsg(requester_lizard, &zmq_msg, 0); 
-        msg_data = zmq_msg_data(&zmq_msg);
-        client_response = response_to_client__unpack(NULL, msg_len, msg_data);
+        int n = 0;
+        while (n!= max_roaches+26){
+
+            if(now>times_kicker_array[n] && times_kicker_array[n] != 0 && codes_kicker_matrix[n*2+0]==0){
+
+                leave_lizard.code = codes_kicker_matrix[n*2+1];
+
+                int i = 0;
+                while(lizards[i].code != leave_lizard.code){
+                    i++;
+                }
+
+                leave_lizard.ch = strdup(&lizards[i].ch);
+
+                // send lizard kick message
+                msg_len = client_lizard_message__get_packed_size(&leave_lizard);
+                msg_buf = malloc(msg_len);
+                client_lizard_message__pack(&leave_lizard, msg_buf);
+                zmq_send (requester_lizard, msg_buf, msg_len, 0);
+                free(msg_buf);
+
+                // receive confirmation
+                msg_len = zmq_recvmsg(requester_lizard, &zmq_msg, 0); 
+                msg_data = zmq_msg_data(&zmq_msg);
+                client_response = response_to_client__unpack(NULL, msg_len, msg_data);
+
+                codes_kicker_matrix[n*2+0] = 0;
+                codes_kicker_matrix[n*2+1] = 1;
+                times_kicker_array[n] = 0;
+
+
+            }
+
+            if(now>times_kicker_array[n] && times_kicker_array[n] != 0 && codes_kicker_matrix[n*2+0]==1){
+
+                leave_roach_wasp.code = codes_kicker_matrix[n*2+1];
+
+                // send roach kick message
+                msg_len = client_roaches_message__get_packed_size(&leave_roach_wasp);
+                msg_buf = malloc(msg_len);
+                client_roaches_message__pack(&leave_roach_wasp, msg_buf);
+                zmq_send (requester_roach_wasp, msg_buf, msg_len, 0);
+                free(msg_buf);
+
+                // receive confirmation
+                msg_len = zmq_recvmsg(requester_roach_wasp, &zmq_msg, 0); 
+                msg_data = zmq_msg_data(&zmq_msg);
+                client_response = response_to_client__unpack(NULL, msg_len, msg_data);
+
+                codes_kicker_matrix[n*2+0] = 0;
+                codes_kicker_matrix[n*2+1] = 1;
+                times_kicker_array[n] = 0;
+            }
+            n++;
+
+        }
 
     }
-
-    if(1){
-
-        sleep(10);
-
-        leave_roach_wasp.code = roach_response->code;
-
-        // send roach kick message
-        msg_len = client_roaches_message__get_packed_size(&leave_roach_wasp);
-        msg_buf = malloc(msg_len);
-        client_roaches_message__pack(&leave_roach_wasp, msg_buf);
-        zmq_send (requester_roach_wasp, msg_buf, msg_len, 0);
-        free(msg_buf);
-
-        // receive confirmation
-        msg_len = zmq_recvmsg(requester_roach_wasp, &zmq_msg, 0); 
-        msg_data = zmq_msg_data(&zmq_msg);
-        client_response = response_to_client__unpack(NULL, msg_len, msg_data);
-    }
+    
 
     
 
@@ -1301,7 +1360,7 @@ int main(int argc, char* argv[]){
 
     lizard_matrix = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*sizeof(int));
 
-    r_respawn_list = (time_t *) malloc(max_roaches*sizeof(int));
+    r_respawn_list = (time_t *) malloc(max_roaches*sizeof(time_t));
 
     time_to_r_id = (int *) malloc(max_roaches*sizeof(int));
 
@@ -1310,6 +1369,12 @@ int main(int argc, char* argv[]){
     barataid_to_pos = (int *) malloc(max_roaches*4*sizeof(int));
 
     position_to_barata = (int *) malloc(WINDOW_SIZE*WINDOW_SIZE*max_roaches*sizeof(int));
+
+    times_kicker_array = (time_t *) malloc((max_roaches+26)*sizeof(time_t));
+
+    codes_kicker_matrix = (int *) malloc((max_roaches+26)*2*sizeof(int));;
+
+    
 
 
 
@@ -1327,6 +1392,14 @@ int main(int argc, char* argv[]){
 
         position_to_barata[n] = -1;
 
+        n++;
+    }
+
+    n = 0;
+    while(n!=max_roaches+26){
+        times_kicker_array[n] = 0;
+        codes_kicker_matrix[n*2+0] = 0;
+        codes_kicker_matrix[n*2+1] = 0;
         n++;
     }
 
