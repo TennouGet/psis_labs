@@ -15,7 +15,7 @@ typedef struct lizards_struct {
 
    int score;
 
-   bool winner;
+   int state;
 
    int direction;
 
