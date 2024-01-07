@@ -361,7 +361,6 @@ void *thread_lizards( void *ptr ){
                 lizards[i].state = 2; // classify as winner lizard
             else if(lizards[i].score <= 49 && lizards[i].score >= 0 && old_score <= 49 && old_score <= 49){
                 lizards[i].state = 1; // classify as normal lizard
-                printf("hello");
             }
             else if(lizards[i].score >= 0 && old_score < 0)
                 lizards[i].state = 5; // classify as turned normal lizard
@@ -669,7 +668,7 @@ void *thread_bugs( void *ptr ){
                     barataid_to_pos[i*4+2] = 0;
                     barataid_to_pos[i*4+3] = 0;
 
-                    int b = code_to_barataid[i*2+0];
+                    int b = code_to_barataid[i*2+1];
 
                     screen.screen_roaches[b*4+0] = -1;
                     screen.screen_roaches[b*4+1] = -1;
