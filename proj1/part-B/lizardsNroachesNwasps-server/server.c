@@ -890,51 +890,57 @@ void *thread_kicker( void *ptr ){
     ResponseToClient * client_response;
 
     ClientLizardMessage leave_lizard = CLIENT_LIZARD_MESSAGE__INIT;
-    leave.has_msg_type = 1;
-    leave.msg_type = 2;
-    leave.has_code = 1;
-    leave.has_direction = 1;
+    leave_lizard.has_msg_type = 1;
+    leave_lizard.msg_type = 2;
+    leave_lizard.has_code = 1;
+    leave_lizard.has_direction = 1;
 
     ClientRoachesMessage leave_roach_wasp = CLIENT_ROACHES_MESSAGE__INIT;
-    leave.has_msg_type = 1;
-    leave.msg_type = 5;
-    leave.has_code = 1;
-    leave.has_n_roaches = 1;
-    leave.n_roaches = 0;
+    leave_roach_wasp.has_msg_type = 1;
+    leave_roach_wasp.msg_type = 5;
+    leave_roach_wasp.has_code = 1;
+    leave_roach_wasp.has_n_roaches = 1;
+    leave_roach_wasp.n_roaches = 0;
 
     int msg_len;
     char * msg_buf;
     void * msg_data;
+    zmq_msg_t zmq_msg;
+    zmq_msg_init(&zmq_msg);
 
-    if(1){
+    if(0){
 
         // send lizard kick message
-        msg_len = client_lizard_message__get_packed_size(&leave);
+        msg_len = client_lizard_message__get_packed_size(&leave_lizard);
         msg_buf = malloc(msg_len);
-        client_lizard_message__pack(&leave, msg_buf);
-        zmq_send (requester, msg_buf, msg_len, 0);
+        client_lizard_message__pack(&leave_lizard, msg_buf);
+        zmq_send (requester_lizard, msg_buf, msg_len, 0);
         free(msg_buf);
 
         // receive confirmation
-        msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+        msg_len = zmq_recvmsg(requester_lizard, &zmq_msg, 0); 
         msg_data = zmq_msg_data(&zmq_msg);
         client_response = response_to_client__unpack(NULL, msg_len, msg_data);
 
     }
 
-    if(2){
+    if(1){
+
+        sleep(10);
+
+        leave_roach_wasp.code = roach_response->code;
 
         // send roach kick message
-        msg_len = client_roaches_message__get_packed_size(&leave);
+        msg_len = client_roaches_message__get_packed_size(&leave_roach_wasp);
         msg_buf = malloc(msg_len);
-        client_roaches_message__pack(&leave, msg_buf);
-        zmq_send (requester, msg_buf, msg_len, 0);
+        client_roaches_message__pack(&leave_roach_wasp, msg_buf);
+        zmq_send (requester_roach_wasp, msg_buf, msg_len, 0);
         free(msg_buf);
 
         // receive confirmation
-        msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+        msg_len = zmq_recvmsg(requester_roach_wasp, &zmq_msg, 0); 
         msg_data = zmq_msg_data(&zmq_msg);
-        roach_response = response_to_client__unpack(NULL, msg_len, msg_data);
+        client_response = response_to_client__unpack(NULL, msg_len, msg_data);
     }
 
     
