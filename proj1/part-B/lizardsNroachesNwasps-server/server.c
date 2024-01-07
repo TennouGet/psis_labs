@@ -570,6 +570,7 @@ void *thread_bugs( void *ptr ){
         // process roach movement message
         if(client->msg_type == 4){
 
+
             int i = 0;
             while(code_to_barataid[i*2+0]!= client->code){
                 i++;
@@ -692,6 +693,8 @@ void *thread_bugs( void *ptr ){
             msg_buf = malloc(msg_len);
             remote_screen__pack(&screen, msg_buf);
             zmq_send (publisher, msg_buf, msg_len, 0);
+
+        
 
         }
 
@@ -1109,6 +1112,8 @@ void *thread_display(void *PORT)
                     roaches[ID][2] = v;
                 }
             }
+            
+            
 
             box(my_win, 0 , 0);	
             wrefresh(my_win);
