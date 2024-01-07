@@ -123,6 +123,7 @@ void calc_pos(int i, int *lizard_matrix, int direction){
     int n_of_client = lizards[i].ch - 97;
 
     bool collision = false;
+    bool wasp_collision = false;
 
     int x = lizards[i].x;
     int y = lizards[i].y;
@@ -169,8 +170,18 @@ void calc_pos(int i, int *lizard_matrix, int direction){
             lizards[i].score = round((lizard_score+other_lizard_score)/2);
             lizards[other_lizard_id].score = lizards[i].score;
     }
+    if(position_to_barata[xyz_to_p(x,y,0)] != -1){
+        //get bug id
+        int bug_id = position_to_barata[xyz_to_p(x,y,0)];
+        //check if that bug is a wasp (negative score)
+        if (barataid_to_pos[bug_id*4+2] < 0){
+            wasp_collision = true;
+            lizards[i].score -= 10;
+        }
 
-    if(!collision){
+    }
+
+    if(!collision && !wasp_collision){
             lizard_matrix[x*WINDOW_SIZE + y] = n_of_client;
             lizard_matrix[lizards[i].x*WINDOW_SIZE + lizards[i].y] = -1;
             lizards[i].x = x;
@@ -643,15 +654,15 @@ void *thread_bugs( void *ptr ){
                         }
                         else{
                             //there is a lizard in new pos
-                            if (v==0){
+                            if (ctrl_wasp==0){
                                 //roach can't move
                                 screen.screen_roaches[b*4+3] = -1;
                             }
-                            if (v==1){
+                            if (ctrl_wasp==1){
                                 screen.screen_roaches[b*4+3] = -1;
                                 //wasp stungs lizard
                                 int i = lizard_matrix[x*WINDOW_SIZE + y];
-                                lizards[i].score = lizards[i].score - 10;
+                                lizards[i].score -= 10;
                             }
                         }
                             
@@ -684,7 +695,7 @@ void *thread_bugs( void *ptr ){
 
         }
 
-                // process roach leave message
+        // process roach leave message
         if (client->msg_type == 5){
 
             int i = 0;
