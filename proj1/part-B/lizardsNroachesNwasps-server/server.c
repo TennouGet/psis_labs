@@ -90,6 +90,7 @@ matrix_translation p_to_xy(int p, int n_col){
 // lizard thread and functions
 
 void new_position(int* x, int *y, int direction){
+    
     switch (direction)
     {
     case 0:
@@ -132,6 +133,8 @@ void calc_pos(int i, int *lizard_matrix, int direction){
         (x) --;
         if(x ==0)
             x = 2;
+        if(x ==-1)
+            x = 1;
         break;
 
     case 1:
@@ -714,7 +717,6 @@ void *thread_bugs( void *ptr ){
 
 }
 
-
 void *thread_timer( void *ptr ){
 
     long int thread_number = (long int)ptr;
@@ -927,10 +929,10 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
             break;
         }
 
-        // draw new lizard char
-        mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
-
     }
+
+    // draw new lizard char
+    mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
 
     mvprintw(WINDOW_SIZE + 4 + (*screen->ch - 97), 4, "\rLizard %c score: %d.", *screen->ch, screen->score);
 
