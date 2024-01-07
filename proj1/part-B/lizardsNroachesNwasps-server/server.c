@@ -657,11 +657,16 @@ void *thread_bugs( void *ptr ){
                     code_to_barataid[i*2+1] = 0;
 
 
-                    int p = 0;
-                    while( position_to_barata[xyz_to_p(barataid_to_pos[i*4+0],barataid_to_pos[i*4+1],p)]!=i){
-                        p++;
+                    if(barataid_to_pos[i*4+3] == 0){
+
+                        int p = 0;
+                        while( position_to_barata[xyz_to_p(barataid_to_pos[i*4+0],barataid_to_pos[i*4+1],p)]!=i){
+                            p++;
+                        }
+                        position_to_barata[xyz_to_p(barataid_to_pos[i*4+0],barataid_to_pos[i*4+1],p)] = -1;
+
                     }
-                    position_to_barata[xyz_to_p(barataid_to_pos[i*4+0],barataid_to_pos[i*4+1],p)] = -1;
+
 
                     barataid_to_pos[i*4+0] = 0;
                     barataid_to_pos[i*4+1] = 0;
