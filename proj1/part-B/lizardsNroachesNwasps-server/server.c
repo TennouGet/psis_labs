@@ -125,8 +125,6 @@ void calc_pos(int i, int *lizard_matrix, int direction){
 
     int x = lizards[i].x;
     int y = lizards[i].y;
-    //printf("x: %d, y: %d.\n", lizards[i].x, lizards[i].y);
-    //int pos = x*WINDOW_SIZE + y;
 
     switch (direction)
     {
@@ -262,6 +260,7 @@ void *thread_lizards( void *ptr ){
     zmq_msg_init(&zmq_msg);
 
     int i=0;
+    int old_score;
 
     int msg_len;
     void * msg_data;
@@ -283,6 +282,7 @@ void *thread_lizards( void *ptr ){
     screen.has_new_x = 1;
     screen.has_new_y = 1;
     screen.has_score = 1;
+    screen.has_state = 1;
     screen.has_old_direction = 1;
     screen.has_new_direction = 1;
 
@@ -325,6 +325,8 @@ void *thread_lizards( void *ptr ){
             screen.old_y = lizards[i].y;
             screen.old_direction = lizards[i].direction;
 
+            old_score = lizards[i].score;
+
             calc_pos(i, lizard_matrix, client->direction); // calculate new position
 
             //----------------------------------------------------------
@@ -355,8 +357,20 @@ void *thread_lizards( void *ptr ){
 
             //----------------------------------------------------------
 
-            if(lizards[i].score > 49)
-                lizards[i].winner = true; // classify as a new winner lizard
+            if(lizards[i].score > 49 && old_score > 49)
+                lizards[i].state = 2; // classify as winner lizard
+            else if(lizards[i].score <= 49 && lizards[i].score >= 0 && old_score <= 49 && old_score <= 49){
+                lizards[i].state = 1; // classify as normal lizard
+                printf("hello");
+            }
+            else if(lizards[i].score >= 0 && old_score < 0)
+                lizards[i].state = 5; // classify as turned normal lizard
+            else if(lizards[i].score < 0 && old_score >= 0)
+                lizards[i].state = 3; // classify as turned loser lizard
+            else if(lizards[i].score < 0 && old_score < 0)
+                lizards[i].state = 4; // classify as loser lizard
+
+            old_score = 0;
 
             client_response->code = lizards[i].code;
             client_response->assigned_char = strdup(&lizards[i].ch);
@@ -371,6 +385,7 @@ void *thread_lizards( void *ptr ){
 
             screen.ch = strdup(&lizards[i].ch);
             screen.score = lizards[i].score;
+            screen.state = lizards[i].state;
             screen.new_x = lizards[i].x;
             screen.new_y = lizards[i].y;
             screen.new_direction = lizards[i].direction;
@@ -751,9 +766,22 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
 
     int i = 0;
 
-    if(mode==0 || mode==1 || mode==2){ //delete lizard at previous position
+    /*
+    mode 0 delete lizard
+    mode 1 move normal lizard
+    mode 2 move winner lizard
+    mode 3 move lizard that just turned loser
+    mode 4 move loser lizard
+    mode 5 move lizard that just turned normal
+    */
 
-        mvwaddch(my_win, screen->old_x, screen->old_y, ' ');
+    // matrix for things to put back
+
+    // erase old lizard char
+    mvwaddch(my_win, screen->old_x, screen->old_y, ' ');
+    
+
+    if(mode < 4){ // delete lizard tail at previous position
 
         switch (screen->old_direction)
         {
@@ -795,8 +823,8 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
         }
     }
 
-    if(mode==1 || mode==2){ //add lizard at new position
-        
+    if(mode==1 || mode==2 || mode==5){ // add lizard tail at new position
+
         switch (screen->new_direction)
         {
         case 0:
@@ -836,7 +864,9 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
             break;
         }
 
+        // draw new lizard char
         mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
+
     }
 
     mvprintw(WINDOW_SIZE + 4 + (*screen->ch - 97), 4, "\rLizard %c score: %d.", *screen->ch, screen->score);
@@ -912,10 +942,7 @@ void *thread_display(void *PORT)
         
         if(screen2->msg_type == 1){ // process lizard movement
 
-            if(screen2->score > 49)
-                update_window(my_win, screen2, 2);
-            else
-                update_window(my_win, screen2, 1);
+            update_window(my_win, screen2, screen2->state);
 
             box(my_win, 0 , 0);
             char str[40];
@@ -1068,7 +1095,7 @@ int main(int argc, char* argv[]){
         lizard_matrix[i] = -1;
         if(i<25){
             lizards[i].code = 0;
-            lizards[i].winner = false;
+            lizards[i].state = 1;
         }
     }
 

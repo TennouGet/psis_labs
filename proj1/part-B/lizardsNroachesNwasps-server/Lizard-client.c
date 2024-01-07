@@ -22,9 +22,22 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
 
     int i = 0;
 
-    if(mode==0 || mode==1 || mode==2){ //delete lizard at previous position
+    /*
+    mode 0 delete lizard
+    mode 1 move normal lizard
+    mode 2 move winner lizard
+    mode 3 move lizard that just turned loser
+    mode 4 move loser lizard
+    mode 5 move lizard that just turned normal
+    */
 
-        mvwaddch(my_win, screen->old_x, screen->old_y, ' ');
+    // matrix for things to put back
+
+    // erase old lizard char
+    mvwaddch(my_win, screen->old_x, screen->old_y, ' ');
+    
+
+    if(mode < 4){ // delete lizard tail at previous position
 
         switch (screen->old_direction)
         {
@@ -66,8 +79,8 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
         }
     }
 
-    if(mode==1 || mode==2){ //add lizard at new position
-        
+    if(mode==1 || mode==2 || mode==5){ // add lizard tail at new position
+
         switch (screen->new_direction)
         {
         case 0:
@@ -107,7 +120,9 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
             break;
         }
 
+        // draw new lizard char
         mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
+
     }
 
     mvprintw(WINDOW_SIZE + 4 + (*screen->ch - 97), 4, "\rLizard %c score: %d.", *screen->ch, screen->score);
@@ -183,10 +198,12 @@ void *thread_display(void *PORT)
         
         if(screen2->msg_type == 1){ // process lizard movement
 
-            if(screen2->score > 49)
+            /*if(screen2->score > 49)
                 update_window(my_win, screen2, 2);
             else
-                update_window(my_win, screen2, 1);
+                update_window(my_win, screen2, 1);*/
+
+            update_window(my_win, screen2, screen2->state);
 
             box(my_win, 0 , 0);
             char str[40];
