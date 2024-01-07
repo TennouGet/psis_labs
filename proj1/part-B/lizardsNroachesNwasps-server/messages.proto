@@ -32,9 +32,10 @@ message remote_screen {
   optional int32 new_x = 5;
   optional int32 new_y = 6;
   optional int32 score = 7;
-  optional direction_t old_direction = 8;
-  optional direction_t new_direction = 9;
-  repeated int32 screen_roaches = 10;
+  optional int32 state = 8;
+  optional direction_t old_direction = 9;
+  optional direction_t new_direction = 10;
+  repeated int32 screen_roaches = 11;
 }
 
 message response_to_client {
