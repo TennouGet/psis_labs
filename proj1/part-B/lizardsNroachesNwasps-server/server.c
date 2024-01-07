@@ -873,6 +873,12 @@ void *thread_timer( void *ptr ){
 
 }
 
+void *thread_kicker( void *ptr ){
+
+
+}
+
+
 // display thread and functions
 
 void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
