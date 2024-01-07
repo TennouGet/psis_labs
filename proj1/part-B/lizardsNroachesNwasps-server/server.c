@@ -574,7 +574,9 @@ void *thread_bugs( void *ptr ){
                     }
 
                     int roach_code = i;
-
+                    int ctrl_wasp = 0;
+                    
+                    //do not accept move message to a dead roach
                     if (barataid_to_pos[roach_code*4+3]!=1){
                         
                         
@@ -582,6 +584,11 @@ void *thread_bugs( void *ptr ){
                         int y = barataid_to_pos[roach_code*4+1];
                         int v = barataid_to_pos[roach_code*4+2];
 
+                        //if it is a wasp move, must not let move into other animals
+                        if (v<10){
+                            ctrl_wasp = 1;
+                        }
+                        
                         //store old information
                         int old_x = x;
                         int old_y = y;
@@ -591,36 +598,63 @@ void *thread_bugs( void *ptr ){
 
                         if(lizard_matrix[x*WINDOW_SIZE+y]<0){
                             //no lizards there, roach can move
-
-                            //delete old information about barata position on the 3d matrix
-                            int n = 0;
-                            while(position_to_barata[xyz_to_p(old_x,old_y,n)]!=roach_code){
-                                n++;
-                            }
-                            position_to_barata[xyz_to_p(old_x,old_y,n)] = -1;
-
                             
-
-                            //update matrices barataid_to_pos and position_to_barata
-
-                            barataid_to_pos[roach_code*4+0] = x;
-                            barataid_to_pos[roach_code*4+1] = y;
-                            
-                            n = 0;
-                            while(position_to_barata[xyz_to_p(x,y,n)]!=-1){
-                                n++;
+                            //check if there is a wasp in new spot
+                            int ctrl_other_wasp = 0;
+                            //check if spot is occupied
+                            if(position_to_barata[xyz_to_p(x,y,0)] != -1){
+                                //get bug id
+                                int bug_id = position_to_barata[xyz_to_p(x,y,0)];
+                                //check if that bug is a wasp (negative score)
+                                if (barataid_to_pos[bug_id*4+2] < 0){
+                                    ctrl_other_wasp = 1;
+                                }
                             }
-                            position_to_barata[xyz_to_p(x,y,n)] = roach_code;
 
-                            screen.screen_roaches[b*4+0] = x;
-                            screen.screen_roaches[b*4+1] = y;
-                            screen.screen_roaches[b*4+2] = v;
-                            screen.screen_roaches[b*4+3] = roach_code;
+                            //if it is a roach, it can't move into a wasp
+                            //if it is a wasp, it cannot move into an occupied space
+                            if((ctrl_wasp == 0 && ctrl_other_wasp == 0) || (position_to_barata[xyz_to_p(x,y,0)] == -1)){
+                                //delete old information about barata position on the 3d matrix
+                                int n = 0;
+                                while(position_to_barata[xyz_to_p(old_x,old_y,n)]!=roach_code){
+                                    n++;
+                                }
+                                position_to_barata[xyz_to_p(old_x,old_y,n)] = -1;
 
+                                
 
+                                //update matrices barataid_to_pos and position_to_barata
+
+                                barataid_to_pos[roach_code*4+0] = x;
+                                barataid_to_pos[roach_code*4+1] = y;
+                                
+                                n = 0;
+                                while(position_to_barata[xyz_to_p(x,y,n)]!=-1){
+                                    n++;
+                                }
+                                position_to_barata[xyz_to_p(x,y,n)] = roach_code;
+
+                                screen.screen_roaches[b*4+0] = x;
+                                screen.screen_roaches[b*4+1] = y;
+                                screen.screen_roaches[b*4+2] = v;
+                                screen.screen_roaches[b*4+3] = roach_code;
+
+                            }
                         }
-                        else
-                            screen.screen_roaches[b*4+3] = -1;
+                        else{
+                            //there is a lizard in new pos
+                            if (v==0){
+                                //roach can't move
+                                screen.screen_roaches[b*4+3] = -1;
+                            }
+                            if (v==1){
+                                screen.screen_roaches[b*4+3] = -1;
+                                //wasp stungs lizard
+                                int i = lizard_matrix[x*WINDOW_SIZE + y];
+                                lizards[i].score = lizards[i].score - 10;
+                            }
+                        }
+                            
                     }
                 }
                 else
