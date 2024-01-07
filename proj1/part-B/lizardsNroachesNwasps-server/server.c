@@ -875,6 +875,65 @@ void *thread_timer( void *ptr ){
 
 void *thread_kicker( void *ptr ){
 
+    
+    void *requester_lizard = zmq_socket(context, ZMQ_REQ);
+    zmq_connect(requester_lizard, "tcp://localhost:5555");
+
+    void *requester_roach_wasp = zmq_socket(context, ZMQ_REQ);
+    zmq_connect(requester_roach_wasp, "tcp://localhost:5556");
+
+    ResponseToClient * client_response;
+
+    ClientLizardMessage leave_lizard = CLIENT_LIZARD_MESSAGE__INIT;
+    leave.has_msg_type = 1;
+    leave.msg_type = 2;
+    leave.has_code = 1;
+    leave.has_direction = 1;
+
+    ClientRoachesMessage leave_roach_wasp = CLIENT_ROACHES_MESSAGE__INIT;
+    leave.has_msg_type = 1;
+    leave.msg_type = 5;
+    leave.has_code = 1;
+    leave.has_n_roaches = 1;
+    leave.n_roaches = 0;
+
+    int msg_len;
+    char * msg_buf;
+    void * msg_data;
+
+    if(1){
+
+        // send lizard kick message
+        msg_len = client_lizard_message__get_packed_size(&leave);
+        msg_buf = malloc(msg_len);
+        client_lizard_message__pack(&leave, msg_buf);
+        zmq_send (requester, msg_buf, msg_len, 0);
+        free(msg_buf);
+
+        // receive confirmation
+        msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+        msg_data = zmq_msg_data(&zmq_msg);
+        client_response = response_to_client__unpack(NULL, msg_len, msg_data);
+
+    }
+
+    if(2){
+
+        // send roach kick message
+        msg_len = client_roaches_message__get_packed_size(&leave);
+        msg_buf = malloc(msg_len);
+        client_roaches_message__pack(&leave, msg_buf);
+        zmq_send (requester, msg_buf, msg_len, 0);
+        free(msg_buf);
+
+        // receive confirmation
+        msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
+        msg_data = zmq_msg_data(&zmq_msg);
+        roach_response = response_to_client__unpack(NULL, msg_len, msg_data);
+    }
+
+    
+
 
 }
 
@@ -1221,9 +1280,10 @@ int main(int argc, char* argv[]){
     rc = zmq_bind(publisher, PUB_PORT);
     assert(rc == 0);
 
+    // Socket to receive roaches/wasps requests
     responder = zmq_socket(context, ZMQ_REP);
-    int rc3 = zmq_bind(responder, "tcp://*:5556");
-    assert(rc3 == 0);
+    rc = zmq_bind(responder, "tcp://*:5556");
+    assert(rc == 0);
 
 
     // Variable initialization
@@ -1295,6 +1355,10 @@ int main(int argc, char* argv[]){
     // Spawn roach respawn thread
     pthread_t roach_respawn;
     pthread_create( &roach_respawn, NULL, thread_timer, (void *) worker_nbr);
+
+    // Spawn kicker thread
+    pthread_t kicker;
+    pthread_create( &kicker, NULL, thread_kicker, (void *) 0);
 
     //  Start the proxy
     zmq_proxy (frontend, backend, NULL);

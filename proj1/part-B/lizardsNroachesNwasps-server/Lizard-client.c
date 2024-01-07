@@ -120,10 +120,10 @@ void update_window(WINDOW * my_win, RemoteScreen * screen, int mode){
             break;
         }
 
-        // draw new lizard char
-        mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
-
     }
+
+    // draw new lizard char
+    mvwaddch(my_win, screen->new_x, screen->new_y, *screen->ch);
 
     mvprintw(WINDOW_SIZE + 4 + (*screen->ch - 97), 4, "\rLizard %c score: %d.", *screen->ch, screen->score);
 
@@ -164,17 +164,13 @@ void *thread_display(void *PORT)
     void * msg_data;
     RemoteScreen * screen2;
 
-    printf("Connected to server");
-
-    printf("sub_name: %s", sub_name);
-
     char buffer[20];
     
     // ncurses initialization
-	//initscr();
-	//cbreak();
-    //keypad(stdscr, TRUE);
-	//noecho();
+	initscr();
+	cbreak();
+    keypad(stdscr, TRUE);
+	noecho();
 
     // creates a window and draws a border
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
@@ -194,18 +190,23 @@ void *thread_display(void *PORT)
         // process the movement message
 
         int i = 0;
+
+        clear();
         
         if(screen2->msg_type == 1){ // process lizard movement
 
             update_window(my_win, screen2, screen2->state);
 
-            box(my_win, 0 , 0);
+            //box(my_win, 0 , 0);
             char str[40];
             snprintf(str, sizeof(str), "\rLizard %s score: %d.", screen2->ch, screen2->score);
 
             mvwaddstr(text_win, *screen2->ch - 97, 0, str);
-            wrefresh(text_win);
-            wrefresh(my_win);
+            //wrefresh(text_win);
+            //wrefresh(my_win);
+            //box(my_win, 0 , 0);	
+            //wrefresh(my_win);
+            //wrefresh(text_win);
         }
 
         if(screen2->msg_type == 2){ // process lizard leave
@@ -213,11 +214,11 @@ void *thread_display(void *PORT)
             wmove(my_win, screen2->new_x, screen2->new_y);
             waddch(my_win,' ');
             update_window(my_win, screen2, 0); // erase leaving lizard
-            box(my_win, 0 , 0);
+            //box(my_win, 0 , 0);
             wmove(text_win, *screen2->ch - 97, 0);
-            wclrtoeol(text_win);
-            wrefresh(text_win);
-            wrefresh(my_win);
+            //wclrtoeol(text_win);
+            //wrefresh(text_win);
+            //wrefresh(my_win);
 
         }
 
@@ -242,17 +243,50 @@ void *thread_display(void *PORT)
                     if(v != 0){
                         mvwaddch(my_win, old_x, old_y, ' ');
                     }
-                    mvwaddch(my_win, new_x, new_y, v + 48);
+                    if (v > 0){
+                        mvwaddch(my_win, new_x, new_y, v + 48);
+                    }
+                    else{
+                        mvwaddch(my_win, new_x, new_y, 35);
+                    }
+                    
                     roaches[ID][0] = new_x;
                     roaches[ID][1] = new_y;
                     roaches[ID][2] = v;
                 }
             }
 
+        }
+
+        if(screen2->msg_type == 4){ // process roaches leave
+
+            int old_x = 0;
+            int old_y = 0;
+            int ID = 0;
+
+            for(i=0; i<10; i++){
+                ID = screen2->screen_roaches[i*4 + 3];
+                old_x = roaches[ID][0];
+                old_y = roaches[ID][1];
+
+
+                mvwaddch(my_win, old_x, old_y, ' ');
+                    
+                roaches[ID][0] = 0;
+                roaches[ID][1] = 0;
+                roaches[ID][2] = 0;
+                
+            }
+
             box(my_win, 0 , 0);	
             wrefresh(my_win);
         }
 
+        //clear();
+        refresh();
+        box(my_win, 0 , 0);	
+        wrefresh(my_win);
+        wrefresh(text_win);
     }
 
   	endwin();			// End curses mode
@@ -288,17 +322,11 @@ int main(int argc, char* argv[])
         return 0;
     }
 
-    printf ("Connecting to server…");
+    printf ("Connecting to server…\n");
     void *context = zmq_ctx_new ();
     void *requester = zmq_socket (context, ZMQ_REQ);
     int code = zmq_connect (requester, IP_n_PORT);
     printf ("\rConnected to server? %d\n", code);
-
-    // ncurses initialization
-	initscr();
-	cbreak();
-    keypad(stdscr, TRUE);
-	noecho();
 
     // Spawn display thread
     pthread_t display;
@@ -329,7 +357,7 @@ int main(int argc, char* argv[])
     char * msg_buf = malloc(msg_len);
     client_lizard_message__pack(&join, msg_buf);
     zmq_send (requester, msg_buf, msg_len, 0);
-    //free(msg_buf);
+    free(msg_buf);
 
     msg_len = zmq_recvmsg(requester, &zmq_msg, 0); 
     void * msg_data = zmq_msg_data(&zmq_msg);
@@ -344,6 +372,13 @@ int main(int argc, char* argv[])
         return 0;
     }
 
+    // ncurses initialization
+	//initscr();
+	//cbreak();
+    //keypad(stdscr, TRUE);
+	//noecho();
+    //clear();
+
     move.ch = client_response->assigned_char;
     move.msg_type = 1;
     move.code = client_response->code;
@@ -355,7 +390,7 @@ int main(int argc, char* argv[])
     while(1){
 
     	ch = getch();
-        clear();
+        //clear();
         switch (ch)
         {
             case KEY_LEFT:
@@ -375,10 +410,10 @@ int main(int argc, char* argv[])
                 valid_ch = true;
                 break;
             case 'q':
-                printf("q is pressed, sending exit message");
+                printf("q is pressed, sending exit message\n");
                 exit_program = true;
             case 'Q':
-                printf("Q is pressed, sending exit message");
+                printf("Q is pressed, sending exit message\n");
                 exit_program = true;
             default:
                 ch = 'x';
@@ -404,6 +439,7 @@ int main(int argc, char* argv[])
             client_response = response_to_client__unpack(NULL, msg_len, msg_data);
 
             if(client_response->status == 2){
+                endwin();
                 printf("exiting..\n");
                 zmq_close (requester);
                 zmq_ctx_destroy (context);
@@ -411,7 +447,8 @@ int main(int argc, char* argv[])
                 break;
             }
             else{
-                printf("error while trying to exit");
+                endwin();
+                printf("error while trying to exit\n");
             }
         }
 
@@ -428,19 +465,23 @@ int main(int argc, char* argv[])
             msg_data = zmq_msg_data(&zmq_msg);
             client_response = response_to_client__unpack(NULL, msg_len, msg_data);
 
-            if(client_response->status == 1)
-                printf("\rServer status: OK");
             if(client_response->status == -1 || client_response->status == -2){
                 zmq_close (requester);
                 zmq_ctx_destroy (context);
+                endwin();
                 if(client_response->status == -1)
-                    printf("\rError -1: server full, try again.");
+                    printf("\rError -1: server full, try again.\n");
                 if(client_response->status == -2)
                     printf("Error -2: no empty space to deploy lizard, try again.\n");
                 return 0;
             }
-            if(client_response->status != 1 && client_response->status != -1 && client_response->status != -2)
-                printf("\rError, server response: %d", client_response->status);
+            if(client_response->status != 1 && client_response->status != -1 && client_response->status != -2){
+                endwin();
+                zmq_close (requester);
+                zmq_ctx_destroy (context);
+                printf("\rError, server response: %d\n", client_response->status);
+                return 0;
+            }
 
         }
 

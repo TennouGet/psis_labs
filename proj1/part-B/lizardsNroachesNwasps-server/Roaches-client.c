@@ -29,24 +29,26 @@ void *thread_disconnect( void *ptr ){
     {
     	ch = getch();	
 
-        clear();
+        //clear();
         switch (ch)
         {
             case 'q':
                 printf("q is pressed, sending exit message");
                 exit_program = true;
+                break;
             case 'Q':
                 printf("Q is pressed, sending exit message");
                 exit_program = true;
+                break;
             default:
                 ch = 'x';
                 valid_ch = false;
-                    break;
+                break;
         }
 
         if(exit_program){ 
             leave_ctrl = 1;
-            ctrl = 0;
+            break;
         }
 
     }
@@ -241,7 +243,7 @@ int main(int argc, char **argv)
 
         
         if (leave_ctrl == 1){
-            endwin();
+            
             int msg_len = client_roaches_message__get_packed_size(&leave);
             char * msg_buf = malloc(msg_len);
             client_roaches_message__pack(&leave, msg_buf);
@@ -261,10 +263,11 @@ int main(int argc, char **argv)
                 zmq_close (requester);
                 zmq_ctx_destroy (context);
                 printf("Disconnected from server.\n");
+                endwin();
                 break;
             }
             else{
-                printf("error while trying to exit");
+                printf("error while trying to exit\n");
             }
             
             return 0;
