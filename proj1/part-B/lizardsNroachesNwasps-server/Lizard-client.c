@@ -216,9 +216,9 @@ void *thread_display(void *PORT)
             update_window(my_win, screen2, 0); // erase leaving lizard
             //box(my_win, 0 , 0);
             wmove(text_win, *screen2->ch - 97, 0);
-            //wclrtoeol(text_win);
-            //wrefresh(text_win);
-            //wrefresh(my_win);
+            wclrtoeol(text_win);
+            wrefresh(text_win);
+            wrefresh(my_win);
 
         }
 
@@ -278,18 +278,18 @@ void *thread_display(void *PORT)
                 
             }
 
-            box(my_win, 0 , 0);	
-            wrefresh(my_win);
+            //box(my_win, 0 , 0);	
+            //wrefresh(my_win);
         }
 
         //clear();
         refresh();
         box(my_win, 0 , 0);	
         wrefresh(my_win);
-        wrefresh(text_win);
+        //wrefresh(text_win);
     }
 
-  	endwin();			// End curses mode
+  	endwin(); // End curses mode
 }
 
 int main(int argc, char* argv[])
