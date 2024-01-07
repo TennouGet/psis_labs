@@ -361,7 +361,6 @@ void *thread_lizards( void *ptr ){
                 lizards[i].state = 2; // classify as winner lizard
             else if(lizards[i].score <= 49 && lizards[i].score >= 0 && old_score <= 49 && old_score <= 49){
                 lizards[i].state = 1; // classify as normal lizard
-                printf("hello");
             }
             else if(lizards[i].score >= 0 && old_score < 0)
                 lizards[i].state = 5; // classify as turned normal lizard
