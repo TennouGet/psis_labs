@@ -673,7 +673,7 @@ void *thread_bugs( void *ptr ){
                     screen.screen_roaches[b*4+0] = -1;
                     screen.screen_roaches[b*4+1] = -1;
                     screen.screen_roaches[b*4+2] = -1;
-                    screen.screen_roaches[b*4+3] = i;
+                    screen.screen_roaches[b*4+3] = i; //problem
 
 
                 }
