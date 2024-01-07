@@ -648,14 +648,68 @@ void *thread_bugs( void *ptr ){
 
         }
 
+                // process roach leave message
+        if (client->msg_type == 5){
+
+            int i = 0;
+            while(i!=max_roaches){
+                if (code_to_barataid[i*2+0]==client->code){
+                    code_to_barataid[i*2+0] = 0;
+                    code_to_barataid[i*2+1] = 0;
+
+
+                    int p = 0;
+                    while( position_to_barata[xyz_to_p(barataid_to_pos[i*4+0],barataid_to_pos[i*4+1],p)]!=i){
+                        p++;
+                    }
+                    position_to_barata[xyz_to_p(barataid_to_pos[i*4+0],barataid_to_pos[i*4+1],p)] = -1;
+
+                    barataid_to_pos[i*4+0] = 0;
+                    barataid_to_pos[i*4+1] = 0;
+                    barataid_to_pos[i*4+2] = 0;
+                    barataid_to_pos[i*4+3] = 0;
+
+                    int b = code_to_barataid[i*2+0];
+
+                    screen.screen_roaches[b*4+0] = -1;
+                    screen.screen_roaches[b*4+1] = -1;
+                    screen.screen_roaches[b*4+2] = -1;
+                    screen.screen_roaches[b*4+3] = i;
+
+
+                }
+
+
+                i++;
+            }
+
+            roach_response.status = 2;
+            msg_len = response_to_client__get_packed_size(&roach_response);
+            msg_buf = malloc(msg_len);
+            response_to_client__pack(&roach_response, msg_buf);
+            zmq_send (responder, msg_buf, msg_len, 0);
+            free(msg_buf);
+
+
+
+            screen.msg_type = 4;
+            zmq_send(publisher, buffer, strlen(buffer), ZMQ_SNDMORE);
+            msg_len = remote_screen__get_packed_size(&screen);
+            msg_buf = malloc(msg_len);
+            remote_screen__pack(&screen, msg_buf);
+            zmq_send (publisher, msg_buf, msg_len, 0);
+
+        
+        }
+
+
+
     }
 
 }
 
+
 void *thread_timer( void *ptr ){
-
-
-
 
     long int thread_number = (long int)ptr;
 
@@ -709,33 +763,39 @@ void *thread_timer( void *ptr ){
 
         while(now>r_respawn_list[c_r_index] && r_respawn_list[c_r_index]!=0){
             int id = time_to_r_id[c_r_index];
-            barataid_to_pos[id*4+3]=0;
-            //roach x pos
-            int x = 1+rand()%(WINDOW_SIZE-3);
-            barataid_to_pos[id*4+0] = x;
-            //roach y pos
-            int y = 1+rand()%(WINDOW_SIZE-3);
-            barataid_to_pos[id*4+1] = y;
 
-            int v = barataid_to_pos[id*4+2];
+            //must check if client of the roach did not disconnect before spawning a roach
+            if (barataid_to_pos[id]!=0){
+                
+                //spawning the roach
+                barataid_to_pos[id*4+3]=0;
+                //roach x pos
+                int x = 1+rand()%(WINDOW_SIZE-3);
+                barataid_to_pos[id*4+0] = x;
+                //roach y pos
+                int y = 1+rand()%(WINDOW_SIZE-3);
+                barataid_to_pos[id*4+1] = y;
 
-            i=0;
-            while(position_to_barata[xyz_to_p(x,y,i)]!=-1){
-                i++;
+                int v = barataid_to_pos[id*4+2];
+
+                i=0;
+                while(position_to_barata[xyz_to_p(x,y,i)]!=-1){
+                    i++;
+                }
+                position_to_barata[xyz_to_p(x,y,i)] = id;
+
+
+
+                //store information to update screen
+                update = 1;
+
+                int b = code_to_barataid[id*2+1];
+
+                screen.screen_roaches[b*4+0] = x;
+                screen.screen_roaches[b*4+1] = y;
+                screen.screen_roaches[b*4+2] = v;
+                screen.screen_roaches[b*4+3] = id;
             }
-            position_to_barata[xyz_to_p(x,y,i)] = id;
-
-
-
-            //store information to update screen
-            update = 1;
-
-            int b = code_to_barataid[id*2+1];
-
-            screen.screen_roaches[b*4+0] = x;
-            screen.screen_roaches[b*4+1] = y;
-            screen.screen_roaches[b*4+2] = v;
-            screen.screen_roaches[b*4+3] = id;
 
             r_respawn_list[c_r_index] = 0;
             c_r_index++;
@@ -754,9 +814,6 @@ void *thread_timer( void *ptr ){
         }
 
     }
-
-    
-
 
 }
 
