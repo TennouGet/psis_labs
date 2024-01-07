@@ -348,24 +348,23 @@ void *thread_lizards( void *ptr ){
 
             int q = 0;
             int eaten_barata_id = 0;
-            while (q!=max_roaches){
-                if (position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)]!=-1){
-                    
-                    eaten_barata_id = position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)];
+            while (position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)]!=-1){
+                
+                eaten_barata_id = position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)];
 
-                    lizards[i].score = lizards[i].score + barataid_to_pos[eaten_barata_id*4+2];
+                lizards[i].score = lizards[i].score + barataid_to_pos[eaten_barata_id*4+2];
 
-                    barataid_to_pos[eaten_barata_id*4+3] = 1;
-                    position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)]=-1;
+                barataid_to_pos[eaten_barata_id*4+3] = 1;
+                position_to_barata[xyz_to_p(lizards[i].x,lizards[i].y,q)]=-1;
 
-                    r_respawn_list[c_a_index]= time(&now) + 5;
-                    time_to_r_id[c_a_index] = eaten_barata_id;
+                r_respawn_list[c_a_index]= time(&now) + 5;
+                time_to_r_id[c_a_index] = eaten_barata_id;
 
-                    c_a_index++;
-                    if (c_a_index==max_roaches){
-                        c_a_index=0;
-                    }
+                c_a_index++;
+                if (c_a_index==max_roaches){
+                    c_a_index=0;
                 }
+                
                 q++;
             }
 
@@ -633,6 +632,12 @@ void *thread_bugs( void *ptr ){
                                 }
                                 position_to_barata[xyz_to_p(old_x,old_y,n)] = -1;
 
+                                //if there exists a roach on top of the current one on 3D matrix, push it down, recursively
+                                while(position_to_barata[xyz_to_p(old_x,old_y,n+1)]!=-1){
+                                    position_to_barata[xyz_to_p(old_x,old_y,n)] = position_to_barata[xyz_to_p(old_x,old_y,n+1)];
+                                    position_to_barata[xyz_to_p(old_x,old_y,n+1)] = -1;
+                                    n++;
+                                }  
                                 
 
                                 //update matrices barataid_to_pos and position_to_barata
