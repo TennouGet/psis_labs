@@ -653,10 +653,20 @@ void *thread_bugs( void *ptr ){
             int i = 0;
             while(i!=max_roaches){
                 if (code_to_barataid[i*2+0]==client->code){
+                    
+                    //prepare message to screen, with the universal roach IDS of the leaving roaches
+                    int b = code_to_barataid[i*2+1];
+                    screen.screen_roaches[b*4+0] = -1;
+                    screen.screen_roaches[b*4+1] = -1;
+                    screen.screen_roaches[b*4+2] = -1;
+                    screen.screen_roaches[b*4+3] = i;
+
+                    //reset matrix that translates secret code to universal code
                     code_to_barataid[i*2+0] = 0;
                     code_to_barataid[i*2+1] = 0;
 
-
+                    //reset 3D matrix that shows the roaches present in an xy spot, with z being the dimension that stacks roaches
+                    //check if roach is eaten, if it is eaten it is not on the 3D matrix
                     if(barataid_to_pos[i*4+3] == 0){
 
                         int p = 0;
@@ -667,19 +677,11 @@ void *thread_bugs( void *ptr ){
 
                     }
 
-
+                    //reset matrix that gives x,y and v of a roach when inputing the universal roach ID
                     barataid_to_pos[i*4+0] = 0;
                     barataid_to_pos[i*4+1] = 0;
                     barataid_to_pos[i*4+2] = 0;
                     barataid_to_pos[i*4+3] = 0;
-
-                    int b = code_to_barataid[i*2+1];
-
-                    screen.screen_roaches[b*4+0] = -1;
-                    screen.screen_roaches[b*4+1] = -1;
-                    screen.screen_roaches[b*4+2] = -1;
-                    screen.screen_roaches[b*4+3] = i; //problem
-
 
                 }
 
