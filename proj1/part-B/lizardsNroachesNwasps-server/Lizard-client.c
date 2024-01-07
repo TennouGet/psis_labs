@@ -153,7 +153,7 @@ void *thread_display(void *PORT)
     strcat(IP_nPORT, sub_PORT);
 
     // Socket to talk to screns
-    void *context = zmq_ctx_new();
+    void *context = zmq_ctx_new(); // ERASE
     void *subscriber = zmq_socket(context, ZMQ_SUB);
     zmq_connect(subscriber, "tcp://localhost:5557");
     zmq_setsockopt(subscriber, ZMQ_SUBSCRIBE, sub_name, strlen(sub_name));
@@ -176,7 +176,6 @@ void *thread_display(void *PORT)
     //keypad(stdscr, TRUE);
 	//noecho();
 
-
     // creates a window and draws a border
     WINDOW * my_win = newwin(WINDOW_SIZE, WINDOW_SIZE, 0, 0);
     WINDOW * text_win = newwin(26, 40, WINDOW_SIZE, 0);
@@ -197,11 +196,6 @@ void *thread_display(void *PORT)
         int i = 0;
         
         if(screen2->msg_type == 1){ // process lizard movement
-
-            /*if(screen2->score > 49)
-                update_window(my_win, screen2, 2);
-            else
-                update_window(my_win, screen2, 1);*/
 
             update_window(my_win, screen2, screen2->state);
 
@@ -237,12 +231,12 @@ void *thread_display(void *PORT)
             int ID = 0;
 
             for(i=0; i<10; i++){
-                ID = screen2->screen_roaches[i*10 + 3];
+                ID = screen2->screen_roaches[i*4 + 3];
                 old_x = roaches[ID][0];
                 old_y = roaches[ID][1];
-                new_x = screen2->screen_roaches[i*10 + 0];
-                new_y = screen2->screen_roaches[i*10 + 1];
-                v = screen2->screen_roaches[i*10 + 2];
+                new_x = screen2->screen_roaches[i*4 + 0];
+                new_y = screen2->screen_roaches[i*4 + 1];
+                v = screen2->screen_roaches[i*4 + 2];
 
                 if(ID > -1){
                     if(v != 0){
@@ -259,14 +253,10 @@ void *thread_display(void *PORT)
             wrefresh(my_win);
         }
 
-        //zmq_msg_close(msg_data);
-        //free(screen);
-        //zmq_msg_close (&zmq_msg);
     }
 
   	endwin();			// End curses mode
 }
-
 
 int main(int argc, char* argv[])
 {
